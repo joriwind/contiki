@@ -48,24 +48,24 @@
    #define IEEE802154_CONF_PANID          0xABCD
  */
 
+ #define NETSTACK_CONF_WITH_IPV6 1
+ //#define UIP_CONF_IPV6
+
 /* IP buffer size must match all other hops, in particular the border router. */
-/*
+
    #undef UIP_CONF_BUFFER_SIZE
-   #define UIP_CONF_BUFFER_SIZE           256
- */
+   #define UIP_CONF_BUFFER_SIZE           256//256
+ 
 
 /* Disabling RDC and CSMA for demo purposes. Core updates often
    require more memory. */
 /* For projects, optimize memory and enable RDC and CSMA again. */
-#undef NETSTACK_CONF_RDC
-#define NETSTACK_CONF_RDC              nullrdc_driver
+//#undef NETSTACK_CONF_RDC
+//#define NETSTACK_CONF_RDC              nullrdc_driver
 
 /* Disabling TCP on CoAP nodes. */
 #undef UIP_CONF_TCP
 #define UIP_CONF_TCP                   0
-
-#undef NETSTACK_CONF_MAC
-#define NETSTACK_CONF_MAC     nullmac_driver
 
 /* Increase rpl-border-router IP-buffer when using more than 64. */
 #undef REST_MAX_CHUNK_SIZE
@@ -95,4 +95,37 @@
 
 /* Enable client-side support for COAP observe */
 #define COAP_OBSERVE_CLIENT 1
+
+
+//#undef NETSTACK_CONF_FRAMER
+//#define NETSTACK_CONF_FRAMER noncoresec_framer
+#undef NETSTACK_CONF_LLSEC
+#define NETSTACK_CONF_LLSEC noncoresec_driver
+
+#undef LLSEC802154_CONF_ENABLED
+#define LLSEC802154_CONF_ENABLED 1
+#ifndef LLSEC802154_CONF_SECURITY_LEVEL
+#define LLSEC802154_CONF_SECURITY_LEVEL 1
+#endif
+
+/*#undef AES_128_CONF
+#define AES_128_CONF aes_128_driver*/
+
+//#define LLSEC_ANTIREPLAY_ENABLED 1
+//#define LLSEC_REBOOT_WORKAROUND_ENABLED 1
+
+
+/*#undef LLSEC802154_CONF_ENABLED
+#define LLSEC802154_CONF_ENABLED          1
+//#undef NETSTACK_CONF_FRAMER
+//#define NETSTACK_CONF_FRAMER              noncoresec_framer
+#undef NETSTACK_CONF_LLSEC
+#define NETSTACK_CONF_LLSEC               noncoresec_driver
+#undef NONCORESEC_CONF_SEC_LVL
+#define NONCORESEC_CONF_SEC_LVL           2
+#undef NONCORESEC_CONF_KEY  */
+//#define NONCORESEC_CONF_KEY               { 0x01 , 0x23 , 0x45 , 0x67 , \
+                                            0x89 , 0xAB , 0xCD , 0xEF , \
+                                            0x01 , 0x23 , 0x45 , 0x67 , \
+                                            0x89 , 0xAB , 0xCD , 0xEF }
 #endif /* __PROJECT_ERBIUM_CONF_H__ */

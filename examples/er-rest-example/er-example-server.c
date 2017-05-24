@@ -36,17 +36,23 @@
  *      Matthias Kovatsch <kovatsch@inf.ethz.ch>
  */
 
-#include <stdio.h>
+//#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "contiki.h"
 #include "contiki-net.h"
 #include "rest-engine.h"
+#include "net/llsec/llsec.h"
+
+#undef PLATFORM_HAS_BUTTON
+#undef PLATFORM_HAS_LEDS
+#undef PLATFORM_HAS_LIGHT
 
 #if PLATFORM_HAS_BUTTON
 #include "dev/button-sensor.h"
 #endif
 
+#undef DEBUG
 #define DEBUG 0
 #if DEBUG
 #include <stdio.h>
@@ -119,7 +125,7 @@ PROCESS_THREAD(er_example_server, ev, data)
 
   /* Initialize the REST engine. */
   rest_init_engine();
-
+  
   /*
    * Bind the resources to their Uri-Path.
    * WARNING: Activating twice only means alternate path, not two instances!
