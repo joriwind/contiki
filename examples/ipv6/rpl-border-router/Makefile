@@ -36,6 +36,11 @@ ifeq ($(PREFIX),)
  PREFIX = aaaa::1/64
 endif
 
+
+CFLAGS += -DWITH_LLSEC=1
+MODULES += core/net/llsec/noncoresec
+MODULES += core/net/llsec/adaptivesec
+
 CONTIKI_WITH_IPV6 = 1
 include $(CONTIKI)/Makefile.include
 
@@ -43,7 +48,7 @@ $(CONTIKI)/tools/tunslip6:	$(CONTIKI)/tools/tunslip6.c
 	(cd $(CONTIKI)/tools && $(MAKE) tunslip6)
 
 connect-router:	$(CONTIKI)/tools/tunslip6
-	sudo $(CONTIKI)/tools/tunslip6 $(PREFIX)
+	$(CONTIKI)/tools/tunslip6 $(PREFIX)
 
 connect-router-cooja:	$(CONTIKI)/tools/tunslip6
-	sudo $(CONTIKI)/tools/tunslip6 -a 127.0.0.1 $(PREFIX)
+	$(CONTIKI)/tools/tunslip6 -a 127.0.0.1 $(PREFIX)

@@ -51,7 +51,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#define DEBUG DEBUG_NONE
+#define DEBUG 1
 #include "net/ip/uip-debug.h"
 
 static uip_ipaddr_t prefix;
@@ -83,7 +83,7 @@ AUTOSTART_PROCESSES(&border_router_process,&webserver_nogui_process);
  * and multiple connections can result in garbled segments.
  * TODO:use PSOCk_GENERATOR_SEND and tcp state storage to fix this.
  */
-#define WEBSERVER_CONF_ROUTE_LINKS 0
+#define WEBSERVER_CONF_ROUTE_LINKS 1
 #if WEBSERVER_CONF_ROUTE_LINKS
 #define BUF_USES_STACK 1
 #endif

@@ -60,6 +60,14 @@
 #define URLCONV WEBSERVER_CONF_CFS_URLCONV
 #endif /* WEBSERVER_CONF_CFS_URLCONV */
 
+#define DEBUG 1
+#if DEBUG
+#include <stdio.h>
+#define PRINTF(...) printf(__VA_ARGS__)
+#else /* DEBUG */
+#define PRINTF(...)
+#endif /* DEBUG */
+
 #define STATE_WAITING 0
 #define STATE_OUTPUT  1
 
@@ -128,6 +136,7 @@ PT_THREAD(handle_output(struct httpd_state *s))
 
   s->script = NULL;
   s->script = httpd_simple_get_script(&s->filename[1]);
+  PRINTF("Script: %i\n", s->script);
   if(s->script == NULL) {
     strncpy(s->filename, "/notfound.html", sizeof(s->filename));
     PT_WAIT_THREAD(&s->outputpt,
@@ -148,6 +157,7 @@ PT_THREAD(handle_output(struct httpd_state *s))
 }
 /*---------------------------------------------------------------------------*/
 const char http_get[] = "GET ";
+const char http_post[] = "POST ";
 const char http_index_html[] = "/index.html";
 //const char http_referer[] = "Referer:"
 static
@@ -157,8 +167,12 @@ PT_THREAD(handle_input(struct httpd_state *s))
 
   PSOCK_READTO(&s->sin, ISO_space);
 
+  //Check if GET or POST request else unvalid
   if(strncmp(s->inputbuf, http_get, 4) != 0) {
-    PSOCK_CLOSE_EXIT(&s->sin);
+    if(strncmp(s->inputbuf, http_post, 4) != 0) {
+    //PRINTF("HTTP function: %s\n", s->inputbuf);
+      PSOCK_CLOSE_EXIT(&s->sin);
+    }
   }
   PSOCK_READTO(&s->sin, ISO_space);
 

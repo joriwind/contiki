@@ -40,7 +40,7 @@
 #endif
 
 #ifndef UIP_CONF_BUFFER_SIZE
-#define UIP_CONF_BUFFER_SIZE    140
+#define UIP_CONF_BUFFER_SIZE    256
 #endif
 
 #ifndef UIP_CONF_RECEIVE_WINDOW
@@ -50,5 +50,28 @@
 #ifndef WEBSERVER_CONF_CFS_CONNS
 #define WEBSERVER_CONF_CFS_CONNS 2
 #endif
+
+#undef NETSTACK_CONF_LLSEC
+#define NETSTACK_CONF_LLSEC noncoresec_driver
+
+#undef LLSEC802154_CONF_ENABLED
+#define LLSEC802154_CONF_ENABLED 1
+#ifndef LLSEC802154_CONF_SECURITY_LEVEL
+#define LLSEC802154_CONF_SECURITY_LEVEL 1
+#endif
+
+/*#undef LLSEC802154_CONF_ENABLED
+#define LLSEC802154_CONF_ENABLED          1
+//#undef NETSTACK_CONF_FRAMER
+//#define NETSTACK_CONF_FRAMER              noncoresec_framer
+#undef NETSTACK_CONF_LLSEC
+#define NETSTACK_CONF_LLSEC               noncoresec_driver
+#undef NONCORESEC_CONF_SEC_LVL
+#define NONCORESEC_CONF_SEC_LVL           2
+#undef NONCORESEC_CONF_KEY  
+#define NONCORESEC_CONF_KEY               { 0x01 , 0x23 , 0x45 , 0x67 , \
+                                            0x89 , 0xAB , 0xCD , 0xEF , \
+                                            0x01 , 0x23 , 0x45 , 0x67 , \
+                                            0x89 , 0xAB , 0xCD , 0xEF }*/
 
 #endif /* PROJECT_ROUTER_CONF_H_ */
