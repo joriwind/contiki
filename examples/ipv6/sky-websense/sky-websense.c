@@ -44,6 +44,10 @@
 #include "dev/leds.h"
 #include <stdio.h>
 
+
+#include "dtls.h"
+#include "./apps/dtls-echo/dtls-echo.h"
+
 PROCESS(web_sense_process, "Sense Web Demo");
 PROCESS(webserver_nogui_process, "Web server");
 PROCESS_THREAD(webserver_nogui_process, ev, data)
@@ -163,6 +167,9 @@ PROCESS_THREAD(web_sense_process, ev, data)
   etimer_set(&timer, CLOCK_SECOND * 2);
   SENSORS_ACTIVATE(light_sensor);
   SENSORS_ACTIVATE(sht11_sensor);
+
+  dtls_init();
+  process_start(&dtls_echo_server_process, NULL);
 
   while(1) {
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&timer));

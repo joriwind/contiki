@@ -2,7 +2,7 @@ all: sky-websense
 
 CONTIKI=../../..
 
-APPS += webbrowser
+APPS += webbrowser tinydtls/aes tinydtls/sha2 tinydtls/ecc tinydtls
 
 CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\"
 CONTIKI_SOURCEFILES += wget.c
