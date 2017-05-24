@@ -26,6 +26,7 @@ SMALL=1
 # REST Engine shall use Erbium CoAP implementation
 APPS += er-coap
 APPS += rest-engine
+APPS += ospad
 
 
 CFLAGS += -DWITH_LLSEC=1

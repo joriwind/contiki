@@ -128,4 +128,7 @@
                                             0x89 , 0xAB , 0xCD , 0xEF , \
                                             0x01 , 0x23 , 0x45 , 0x67 , \
                                             0x89 , 0xAB , 0xCD , 0xEF }
+
+//Enable onetime pad encryption
+#define ENABLE_OTP
 #endif /* __PROJECT_ERBIUM_CONF_H__ */

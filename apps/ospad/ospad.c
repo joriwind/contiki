@@ -1,0 +1,68 @@
+//#define DEBUG 0
+
+#include "ospad.h"
+#include <stdio.h>
+#include "sys/cc.h"
+#include "contiki.h"
+#include <string.h>
+
+#ifdef OSPAD_CONF_KEY
+#define OSPAD_KEY OSPAD_CONF_KEY
+#else
+#define OSPAD_KEY     { 0x00 , 0x00 , 0x00 , 0x00 , \
+                        0x00 , 0x00 , 0x00 , 0x00 , \
+                        0x00 , 0x00 , 0x00 , 0x00 , \
+                        0x00 , 0x00 , 0x00 , 0x00 }
+#endif /* OSPAD_CONF_KEY */
+
+#define DEBUG 1
+#if DEBUG
+#include <stdio.h>
+#define PRINTF(...) printf(__VA_ARGS__)
+#else
+#define PRINTF(...)
+#endif
+
+//Object security session key
+uint8_t osskey[16] = OSPAD_KEY;
+uint16_t keySz = 16;
+uint8_t usages;
+
+uint8_t ospad(char* data, uint16_t sz)
+{
+    int i;
+    PRINTF("ospad: Encyrpting data!\n");
+    //Control checks
+    if(keySz < sz){
+        PRINTF("ospad: data longer than key!!\n");
+        return OSPAD_LENGTH_ERROR;
+    }
+
+    if(usages > 0){
+        PRINTF("ospad: ALREADY USED KEY!!\n");
+    }
+
+    for(i = 0; i < sz; i++){
+        data[i] = data[i] ^ osskey[i]; //XOR message and key
+    }
+    usages++;
+
+    return OSPAD_SUCCES;
+}
+
+/*
+ * Set the key of ospad
+ */
+uint8_t setOSSKey(char* key, uint16_t sz){
+    PRINTF("ospad: Setting new key!\n");
+    keySz = sz;
+    memcpy(osskey, key, sz);
+    //Reset usages
+    usages = 0;
+    return 0;
+}
+
+//Returns the amount of usages of this key
+uint8_t getUsages(){
+    return usages;
+}

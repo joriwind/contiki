@@ -112,7 +112,7 @@ PROCESS_THREAD(node_otp, ev, data)
   rest_activate_resource(&res_key, "hecomm/osskey");
 
   /* receives all CoAP messages */
-  coap_init_engine();
+  //coap_init_engine();
 
 #if POLLER_CONF_ENABLE
   etimer_set(&et, TOGGLE_INTERVAL * CLOCK_SECOND);
