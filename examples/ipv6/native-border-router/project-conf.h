@@ -26,7 +26,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
+#define NETSTACK_CONF_WITH_IPV6 1
 #ifndef PROJECT_ROUTER_CONF_H_
 #define PROJECT_ROUTER_CONF_H_
 
@@ -56,5 +56,40 @@
 
 /* used by wpcap (see /cpu/native/net/wpcap-drv.c) */
 #define SELECT_CALLBACK 1
+
+#define NETSTACK_CONF_WITH_IPV6 1
+
+/*#undef NETSTACK_CONF_NETWORK
+#define NETSTACK_CONF_NETWORK     sicslowpan_driver*/
+
+#undef NETSTACK_CONF_LLSEC
+#define NETSTACK_CONF_LLSEC noncoresec_driver
+
+#undef LLSEC802154_CONF_ENABLED
+#define LLSEC802154_CONF_ENABLED 1
+#ifndef LLSEC802154_CONF_SECURITY_LEVEL
+#define LLSEC802154_CONF_SECURITY_LEVEL 1
+#endif
+/*
+#undef AES_128_CONF
+#define AES_128_CONF aes_128_driver*/
+
+//#define LLSEC_ANTIREPLAY_ENABLED 0
+//#define LLSEC_REBOOT_WORKAROUND_ENABLED 1
+
+
+/*#undef LLSEC802154_CONF_ENABLED
+#define LLSEC802154_CONF_ENABLED          1
+#undef NETSTACK_CONF_FRAMER
+#define NETSTACK_CONF_FRAMER              noncoresec_framer
+#undef NETSTACK_CONF_LLSEC
+#define NETSTACK_CONF_LLSEC               noncoresec_driver
+#undef NONCORESEC_CONF_SEC_LVL
+#define NONCORESEC_CONF_SEC_LVL           2
+#undef NONCORESEC_CONF_KEY  */
+//#define NONCORESEC_CONF_KEY               { 0x01 , 0x23 , 0x45 , 0x67 , \
+                                            0x89 , 0xAB , 0xCD , 0xEF , \
+                                            0x01 , 0x23 , 0x45 , 0x67 , \
+                                            0x89 , 0xAB , 0xCD , 0xEF }
 
 #endif /* PROJECT_ROUTER_CONF_H_ */

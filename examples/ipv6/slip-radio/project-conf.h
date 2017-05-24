@@ -30,11 +30,12 @@
 #ifndef PROJECT_CONF_H_
 #define PROJECT_CONF_H_
 
+//#define NETSTACK_CONF_WITH_IPV6 1
 #undef QUEUEBUF_CONF_NUM
 #define QUEUEBUF_CONF_NUM          4
 
 #undef UIP_CONF_BUFFER_SIZE
-#define UIP_CONF_BUFFER_SIZE    140
+#define UIP_CONF_BUFFER_SIZE    256
 
 #undef UIP_CONF_ROUTER
 #define UIP_CONF_ROUTER                 0
@@ -62,6 +63,8 @@
 #undef NETSTACK_CONF_RDC
 /* #define NETSTACK_CONF_RDC     nullrdc_noframer_driver */
 #define NETSTACK_CONF_RDC     contikimac_driver
+//nullrdc?
+//#define NETSTACK_CONF_RDC   nullrdc
 
 #undef NETSTACK_CONF_NETWORK
 #define NETSTACK_CONF_NETWORK slipnet_driver
@@ -74,5 +77,22 @@
 
 #undef UART1_CONF_RX_WITH_DMA
 #define UART1_CONF_RX_WITH_DMA           1
+
+
+//#define PACKETBUF_CONF_WITH_PACKET_TYPE NETSTACK_CONF_WITH_RIME
+#undef NETSTACK_CONF_LLSEC
+#define NETSTACK_CONF_LLSEC noncoresec_driver
+
+#undef LLSEC802154_CONF_ENABLED
+#define LLSEC802154_CONF_ENABLED 1
+#ifndef LLSEC802154_CONF_SECURITY_LEVEL
+#define LLSEC802154_CONF_SECURITY_LEVEL 1
+#endif
+/*
+#undef AES_128_CONF
+#define AES_128_CONF aes_128_driver
+
+//#define LLSEC_ANTIREPLAY_ENABLED 0
+#define LLSEC_REBOOT_WORKAROUND_ENABLED 1*/
 
 #endif /* PROJECT_CONF_H_ */

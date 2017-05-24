@@ -47,7 +47,7 @@
 #include <err.h>
 #include "contiki.h"
 
-int slip_config_verbose = 0;
+int slip_config_verbose = 5;
 const char *slip_config_ipaddr;
 int slip_config_flowcontrol = 0;
 int slip_config_timestamp = 0;
@@ -70,7 +70,7 @@ slip_config_handle_arguments(int argc, char **argv)
   char c;
   int baudrate = 115200;
 
-  slip_config_verbose = 0;
+  slip_config_verbose = 4;
 
   prog = argv[0];
   while((c = getopt(argc, argv, "B:H:D:Lhs:t:v::d::a:p:T")) != -1) {

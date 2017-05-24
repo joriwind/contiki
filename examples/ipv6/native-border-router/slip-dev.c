@@ -55,6 +55,7 @@
 #include "net/packetbuf.h"
 #include "cmd.h"
 #include "border-router-cmds.h"
+ #include "dev/serial-line.h"
 
 extern int slip_config_verbose;
 extern int slip_config_flowcontrol;
