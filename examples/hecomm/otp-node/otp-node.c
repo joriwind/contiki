@@ -42,6 +42,7 @@
 #include "contiki.h"
 #include "contiki-net.h"
 #include "er-coap-engine.h"
+#include "rest-engine.h"
 #include "dev/button-sensor.h"
 
 #define DEBUG 0
@@ -65,6 +66,8 @@
 #define REMOTE_PORT     UIP_HTONS(COAP_DEFAULT_PORT)
 
 #define TOGGLE_INTERVAL 10
+
+extern resource_t res_hello, res_key;
 
 PROCESS(node_otp, "Erbium Example Client: node OTP");
 AUTOSTART_PROCESSES(&node_otp);
@@ -102,6 +105,12 @@ PROCESS_THREAD(node_otp, ev, data)
 
   SERVER_NODE(&server_ipaddr);
 
+
+  /* Initialize the REST engine. */
+  rest_init_engine();
+  rest_activate_resource(&res_hello, "test/hello");
+  rest_activate_resource(&res_key, "hecomm/osskey");
+
   /* receives all CoAP messages */
   coap_init_engine();
 
@@ -115,7 +124,7 @@ PROCESS_THREAD(node_otp, ev, data)
 #endif
 
   while(1) {
-    PROCESS_YIELD();
+    PROCESS_WAIT_EVENT();
 
 #if POLLER_CONF_ENABLE
     if(etimer_expired(&et)) {
