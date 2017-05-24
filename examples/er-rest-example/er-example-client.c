@@ -57,7 +57,8 @@
 #endif
 
 /* FIXME: This server address is hard-coded for Cooja and link-local for unconnected border router. */
-#define SERVER_NODE(ipaddr)   uip_ip6addr(ipaddr, 0xfe80, 0, 0, 0, 0x0212, 0x7402, 0x0002, 0x0202)      /* cooja2 */
+//#define SERVER_NODE(ipaddr)   uip_ip6addr(ipaddr, 0xfe80, 0, 0, 0, 0x0212, 0x7402, 0x0002, 0x0202)      /* cooja2 */
+#define SERVER_NODE(ipaddr)   uip_ip6addr(ipaddr, 0xaaaa, 0, 0, 0, 0x0212, 0x7402, 0x0002, 0x0202)      /* cooja2 */
 /* #define SERVER_NODE(ipaddr)   uip_ip6addr(ipaddr, 0xbbbb, 0, 0, 0, 0, 0, 0, 0x1) */
 
 #define LOCAL_PORT      UIP_HTONS(COAP_DEFAULT_PORT + 1)
@@ -69,7 +70,10 @@ PROCESS(er_example_client, "Erbium Example Client");
 AUTOSTART_PROCESSES(&er_example_client);
 
 uip_ipaddr_t server_ipaddr;
+
+#if POLLER_CONF_ENABLE
 static struct etimer et;
+#endif
 
 /* Example URIs that can be queried. */
 #define NUMBER_OF_URLS 4
@@ -101,7 +105,9 @@ PROCESS_THREAD(er_example_client, ev, data)
   /* receives all CoAP messages */
   coap_init_engine();
 
+#if POLLER_CONF_ENABLE
   etimer_set(&et, TOGGLE_INTERVAL * CLOCK_SECOND);
+#endif
 
 #if PLATFORM_HAS_BUTTON
   SENSORS_ACTIVATE(button_sensor);
@@ -111,6 +117,7 @@ PROCESS_THREAD(er_example_client, ev, data)
   while(1) {
     PROCESS_YIELD();
 
+#if POLLER_CONF_ENABLE
     if(etimer_expired(&et)) {
       printf("--Toggle timer--\n");
 
@@ -131,9 +138,10 @@ PROCESS_THREAD(er_example_client, ev, data)
       printf("\n--Done--\n");
 
       etimer_reset(&et);
-
+    }
+#endif
 #if PLATFORM_HAS_BUTTON
-    } else if(ev == sensors_event && data == &button_sensor) {
+     if(ev == sensors_event && data == &button_sensor) {
 
       /* send a request to notify the end of the process */
 
@@ -151,8 +159,8 @@ PROCESS_THREAD(er_example_client, ev, data)
       printf("\n--Done--\n");
 
       uri_switch = (uri_switch + 1) % NUMBER_OF_URLS;
-#endif
     }
+#endif
   }
 
   PROCESS_END();
