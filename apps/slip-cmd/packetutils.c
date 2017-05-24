@@ -29,7 +29,13 @@
 
 #include "contiki.h"
 #include "net/packetbuf.h"
-#define DEBUG DEBUG_NONE
+#define DEBUG 1
+#if DEBUG
+#include <stdio.h>
+#define PRINTF(...) printf(__VA_ARGS__)
+#else
+#define PRINTF(...)
+#endif
 #include "net/ip/uip-debug.h"
 
 /*---------------------------------------------------------------------------*/
