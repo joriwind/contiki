@@ -433,7 +433,8 @@ coap_send_message(uip_ipaddr_t *addr, uint16_t port, uint8_t *data,
   udp_conn->rport = port;
 
 #ifdef ENABLE_OTP //Check if needs to be encrypted
-  if (*addr == *getCommunicationPartner()) {
+  if (uip_ipaddr_cmp(addr, getCommunicationPartner())) {
+    
     int err;
     err = ospad((char*)data, length);
 

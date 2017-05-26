@@ -44,6 +44,7 @@
 
 #ifdef ENABLE_OTP
 #include "ospad.h"
+#include "contiki-net.h"
 #endif
 
 #define DEBUG 0
@@ -90,7 +91,8 @@ coap_receive(void)
 
     //Possible decryption before parsing
 #ifdef ENABLE_OTP //Check if needs to be decrypted
-      if (UIP_IP_BUF->srcipaddr == *getCommunicationPartner()) {
+      if (uip_ipaddr_cmp(&UIP_IP_BUF->srcipaddr, getCommunicationPartner())) {
+        
       int err;
       err = ospad((char*)uip_appdata, uip_datalen());
 

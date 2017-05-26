@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include "sys/cc.h"
 #include "contiki.h"
+#include "contiki-net.h"
 
 enum _ReturnStates
 {

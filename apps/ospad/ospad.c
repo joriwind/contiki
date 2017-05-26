@@ -15,7 +15,7 @@
                         0x00 , 0x00 , 0x00 , 0x00 }
 #endif /* OSPAD_CONF_KEY */
 
-#define DEBUG 1
+#define DEBUG 0
 #if DEBUG
 #include <stdio.h>
 #define PRINTF(...) printf(__VA_ARGS__)
@@ -73,7 +73,7 @@ uint8_t getUsages(){
 
 //@return return the identification of the communication partner
 uip_ipaddr_t* getCommunicationPartner(){
-    return &partner
+    return &partner;
 }
 
 //Set the communication partner
