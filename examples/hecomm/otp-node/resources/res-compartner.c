@@ -2,8 +2,9 @@
 
 #include <string.h>
 #include "contiki.h"
-#include "rest-engine.h"
+#include "contiki-net.h"
 #include "ospad.h"
+#include "rest-engine.h"
 
 #define DEBUG 1
 #if DEBUG
@@ -20,8 +21,8 @@
 static void res_post_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
 
 /* A simple actuator example. Toggles the red led */
-RESOURCE(res_key,
-         "title=\"OSSKey ?key=value\";rt=\"Control\"",
+RESOURCE(res_compartner,
+         "title=\"Communication partner ?address=value\";rt=\"Control\"",
          NULL,
          res_post_handler,
          NULL,
@@ -31,20 +32,29 @@ static void
 res_post_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
     size_t len = 0;
-    const char *key = NULL;
+    uip_ipaddr_t *addr;
+    const uint8_t *bytes = NULL;
+    uint16_t integers[8];
     int success = 0;
-    PRINTF("Key post\n");
-    if((len = REST.get_request_payload(request, &key))) {
-        PRINTF("OSSKey: %.*s\n", len, key);
-        success = setOSSKey(key, len);
-        if (success > 0){   //Means error from ospad
-            PRINTF("Error setting new key!: %i\n", success);
-            success = 0;
+    int i;
+    PRINTF("Communication partner post\n");
+    if((len = REST.get_request_payload(request, &bytes))) {
+        if(len != 16){
+            PRINTF("Wrong lenght of address: %i\n", len);
         }
-        else
-        {
-            success = 1;
+        PRINTF("Communication partner: %.*s\n", len, bytes);
+        //Conversion to u16
+        for (i = 0; i<8; i++){
+            integers[i] = bytes[2*i] << 8;
+            integers[i] |= bytes[2*i+1];
         }
+        //Create address
+        uip_ip6addr(addr, integers[0], integers[1], integers[2], integers[3], integers[4], integers[5], integers[6], integers[7]);
+        //Set communication partner in ospad
+        setCommunicationPartner(addr);
+        
+        PRINT6ADDR(addr);
+        success = 1;
     }
     if(!success) {
         REST.set_response_status(response, REST.status.BAD_REQUEST);
