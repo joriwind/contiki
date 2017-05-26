@@ -28,6 +28,9 @@ uint8_t osskey[16] = OSPAD_KEY;
 uint16_t keySz = 16;
 uint8_t usages;
 
+//Define the communication partner
+uip_ipaddr_t partner;
+
 uint8_t ospad(char* data, uint16_t sz)
 {
     int i;
@@ -40,6 +43,7 @@ uint8_t ospad(char* data, uint16_t sz)
 
     if(usages > 0){
         PRINTF("ospad: ALREADY USED KEY!!\n");
+        return OSPAD_GENERAL_ERROR;
     }
 
     for(i = 0; i < sz; i++){
@@ -65,4 +69,14 @@ uint8_t setOSSKey(char* key, uint16_t sz){
 //Returns the amount of usages of this key
 uint8_t getUsages(){
     return usages;
+}
+
+//@return return the identification of the communication partner
+uip_ipaddr_t* getCommunicationPartner(){
+    return &partner
+}
+
+//Set the communication partner
+void setCommunicationPartner(uip_ipaddr_t *addr){
+    memcpy(&partner, addr, sizeof(uip_ipaddr_t));
 }

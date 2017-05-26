@@ -433,11 +433,16 @@ coap_send_message(uip_ipaddr_t *addr, uint16_t port, uint8_t *data,
   udp_conn->rport = port;
 
 #ifdef ENABLE_OTP //Check if needs to be encrypted
-  int err;
-  err = ospad((char*)data, length);
+  if (*addr == *getCommunicationPartner()) {
+    int err;
+    err = ospad((char*)data, length);
 
-  if (err != OSPAD_SUCCES) {
-    printf("er-coap: ospadding failed!\n");
+    if (err != OSPAD_SUCCES) {
+      printf("er-coap: ospadding failed!\n");
+      return SERVICE_UNAVAILABLE_5_03;
+    }
+  }else{
+    printf("Not the communication partner for ospad\n");
   }
 #endif
   uip_udp_packet_send(udp_conn, data, length);
@@ -453,15 +458,6 @@ coap_status_t
 coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
 {
   coap_packet_t *const coap_pkt = (coap_packet_t *)packet;
-
-#ifdef ENABLE_OTP //Check if needs to be decrypted
-  int err;
-  err = ospad((char*)data, data_len);
-
-  if (err != OSPAD_SUCCES) {
-    printf("er-coap: ospadding failed!\n");
-  }
-#endif
 
   /* initialize packet */
   memset(coap_pkt, 0, sizeof(coap_packet_t));

@@ -35,4 +35,10 @@ uint8_t setOSSKey(char* key, uint16_t sz);
  */
 uint8_t getUsages();
 
+/*
+ *
+ */
+uip_ipaddr_t* getCommunicationPartner();
+void setCommunicationPartner(uip_ipaddr_t *addr);
+
 #endif //OSPAD_H

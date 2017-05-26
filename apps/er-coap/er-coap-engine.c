@@ -42,6 +42,10 @@
 #include <string.h>
 #include "er-coap-engine.h"
 
+#ifdef ENABLE_OTP
+#include "ospad.h"
+#endif
+
 #define DEBUG 0
 #if DEBUG
 #include <stdio.h>
@@ -83,6 +87,21 @@ coap_receive(void)
     PRINT6ADDR(&UIP_IP_BUF->srcipaddr);
     PRINTF(":%u\n  Length: %u\n", uip_ntohs(UIP_UDP_BUF->srcport),
            uip_datalen());
+
+    //Possible decryption before parsing
+#ifdef ENABLE_OTP //Check if needs to be decrypted
+      if (UIP_IP_BUF->srcipaddr == *getCommunicationPartner()) {
+      int err;
+      err = ospad((char*)uip_appdata, uip_datalen());
+
+      if (err != OSPAD_SUCCES) {
+        printf("er-coap: ospadding failed!\n");
+        return SERVICE_UNAVAILABLE_5_03;
+      }
+    }else{
+      printf("Not the communication partner for ospad\n");
+    }
+#endif
 
     erbium_status_code =
       coap_parse_message(message, uip_appdata, uip_datalen());
