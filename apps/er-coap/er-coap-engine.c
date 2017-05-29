@@ -98,7 +98,7 @@ coap_receive(void)
 
       if (err != OSPAD_SUCCES) {
         printf("er-coap: ospadding failed!\n");
-        return SERVICE_UNAVAILABLE_5_03;
+        //return SERVICE_UNAVAILABLE_5_03;
       }
     }else{
       printf("Not the communication partner for ospad\n");
