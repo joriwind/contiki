@@ -35,7 +35,7 @@ res_post_handler(void *request, void *response, uint8_t *buffer, uint16_t prefer
     int success = 0;
     PRINTF("Key post\n");
     if((len = REST.get_request_payload(request, &key))) {
-        PRINTF("OSSKey: %.*s\n", len, key);
+        PRINTF("OSSKey: %.*s, length: %i\n", len, key, len);
         success = setOSSKey(key, len);
         if (success > 0){   //Means error from ospad
             PRINTF("Error setting new key!: %i\n", success);

@@ -3,7 +3,8 @@ all: otp-node
 
 CONTIKI=../../..
 
-CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\"
+CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\" #-mmemory-model=medium
+TARGET_MEMORY_MODEL = medium
 
 # automatically build RESTful resources
 REST_RESOURCES_DIR = ./resources
