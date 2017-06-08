@@ -69,7 +69,7 @@
 
 /* Increase rpl-border-router IP-buffer when using more than 64. */
 #undef REST_MAX_CHUNK_SIZE
-#define REST_MAX_CHUNK_SIZE            48
+#define REST_MAX_CHUNK_SIZE            64//48
 
 /* Estimate your header size, especially when using Proxy-Uri. */
 /*
@@ -79,7 +79,7 @@
 
 /* Multiplies with chunk size, be aware of memory constraints. */
 #undef COAP_MAX_OPEN_TRANSACTIONS
-#define COAP_MAX_OPEN_TRANSACTIONS     2
+#define COAP_MAX_OPEN_TRANSACTIONS     1
 
 /* Must be <= open transactions, default is COAP_MAX_OPEN_TRANSACTIONS-1. */
 /*
@@ -94,7 +94,7 @@
 #define COAP_PROXY_OPTION_PROCESSING   0
 
 /* Enable client-side support for COAP observe */
-#define COAP_OBSERVE_CLIENT 1
+//#define COAP_OBSERVE_CLIENT 1
 
 
 //#undef NETSTACK_CONF_FRAMER
