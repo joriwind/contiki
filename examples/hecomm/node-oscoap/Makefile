@@ -25,9 +25,9 @@ PROJECT_SOURCEFILES += $(REST_RESOURCES_FILES)
 SMALL=1
 
 # REST Engine shall use Erbium CoAP implementation
-APPS += er-coap
-APPS += rest-engine
+#APPS += er-coap
 APPS += er-oscoap
+APPS += rest-engine
 
 
 CFLAGS += -DWITH_LLSEC=1
