@@ -70,7 +70,7 @@
 #define LOCAL_PORT      UIP_HTONS(COAP_DEFAULT_PORT + 1)
 #define REMOTE_PORT     UIP_HTONS(COAP_DEFAULT_PORT)
 
-extern resource_t res_hello, res_key, res_compartner;
+extern resource_t res_hello, res_os_hello, res_key, res_compartner;
 
 
 /*uint8_t sender_id[] =  { 0x73, 0x65, 0x72, 0x76, 0x65, 0x72 };
@@ -118,6 +118,7 @@ PROCESS_THREAD(node_oscoap, ev, data)
   /* Initialize the REST engine. */
   rest_init_engine();
   rest_activate_resource(&res_hello, "test/hello");
+  //rest_activate_resource(&res_os_hello, "test/os-hello");
   rest_activate_resource(&res_key, "hecomm/osskey");
   rest_activate_resource(&res_compartner, "hecomm/commpartner");
 
