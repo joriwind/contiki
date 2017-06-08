@@ -45,7 +45,6 @@
 #ifdef ENABLE_OTP
 #include "ospad.h"
 #else
-#error "Security not enabled!"
 #endif
 
 #include "er-coap.h"
