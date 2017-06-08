@@ -45,7 +45,7 @@
 #include "rest-engine.h"
 #include "dev/button-sensor.h"
 
-#define DEBUG 0
+#define DEBUG 1
 #if DEBUG
 #include <stdio.h>
 #define PRINTF(...) printf(__VA_ARGS__)
@@ -59,13 +59,15 @@
 
 /* FIXME: This server address is hard-coded for Cooja and link-local for unconnected border router. */
 //#define SERVER_NODE(ipaddr)   uip_ip6addr(ipaddr, 0xfe80, 0, 0, 0, 0x0212, 0x7402, 0x0002, 0x0202)      /* cooja2 */
-#define SERVER_NODE(ipaddr)   uip_ip6addr(ipaddr, 0xaaaa, 0, 0, 0, 0x0212, 0x7402, 0x0002, 0x0202)      /* cooja2 */
+//#define SERVER_NODE(ipaddr)   uip_ip6addr(ipaddr, 0xaaaa, 0, 0, 0, 0x0212, 0x7402, 0x0002, 0x0202)      /* cooja2 */
+//#define SERVER_NODE(ipaddr)   uip_ip6addr(ipaddr, 0xfd6d, 0xf18e, 0x19a8, 0, 0, 0, 0, 0x0c33)
+//#define SERVER_NODE(ipaddr)   uip_ip6addr(ipaddr, 0xfd6d, 0xf18e, 0x19a8, 0, 0x6119, 0x12dc, 0x4ff4, 0x6b9a)
+
+#define SERVER_NODE(ipaddr)   uip_ip6addr(ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, 0x1)
 /* #define SERVER_NODE(ipaddr)   uip_ip6addr(ipaddr, 0xbbbb, 0, 0, 0, 0, 0, 0, 0x1) */
 
 #define LOCAL_PORT      UIP_HTONS(COAP_DEFAULT_PORT + 1)
 #define REMOTE_PORT     UIP_HTONS(COAP_DEFAULT_PORT)
-
-#define TOGGLE_INTERVAL 10
 
 extern resource_t res_hello, res_key, res_compartner;
 
@@ -74,18 +76,12 @@ AUTOSTART_PROCESSES(&node_otp);
 
 uip_ipaddr_t server_ipaddr;
 
-#if POLLER_CONF_ENABLE
-static struct etimer et;
-#endif
 
 /* Example URIs that can be queried. */
-#define NUMBER_OF_URLS 4
+#define NUMBER_OF_URLS 3
 /* leading and ending slashes only for demo purposes, get cropped automatically when setting the Uri-Path */
 char *service_urls[NUMBER_OF_URLS] =
-{ ".well-known/core", "/actuators/toggle", "battery/", "error/in//path" };
-#if PLATFORM_HAS_BUTTON
-static int uri_switch = 0;
-#endif
+{ ".well-known/core", "/hello", "/req" };
 
 /* This function is will be passed to COAP_BLOCKING_REQUEST() to handle responses. */
 void
@@ -115,50 +111,24 @@ PROCESS_THREAD(node_otp, ev, data)
   /* receives all CoAP messages */
   //coap_init_engine();
 
-#if POLLER_CONF_ENABLE
-  etimer_set(&et, TOGGLE_INTERVAL * CLOCK_SECOND);
-#endif
 
 #if PLATFORM_HAS_BUTTON
   SENSORS_ACTIVATE(button_sensor);
-  printf("Press a button to request %s\n", service_urls[uri_switch]);
+  printf("Press a button to request %s\n", service_urls[1]);
 #endif
 
   while(1) {
     PROCESS_WAIT_EVENT();
 
-#if POLLER_CONF_ENABLE
-    if(etimer_expired(&et)) {
-      printf("--Toggle timer--\n");
-
-      /* prepare request, TID is set by COAP_BLOCKING_REQUEST() */
-      coap_init_message(request, COAP_TYPE_CON, COAP_POST, 0);
-      coap_set_header_uri_path(request, service_urls[1]);
-
-      const char msg[] = "Toggle!";
-
-      coap_set_payload(request, (uint8_t *)msg, sizeof(msg) - 1);
-
-      PRINT6ADDR(&server_ipaddr);
-      PRINTF(" : %u\n", UIP_HTONS(REMOTE_PORT));
-
-      COAP_BLOCKING_REQUEST(&server_ipaddr, REMOTE_PORT, request,
-                            client_chunk_handler);
-
-      printf("\n--Done--\n");
-
-      etimer_reset(&et);
-    }
-#endif
 #if PLATFORM_HAS_BUTTON
      if(ev == sensors_event && data == &button_sensor) {
 
       /* send a request to notify the end of the process */
 
       coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
-      coap_set_header_uri_path(request, service_urls[uri_switch]);
+      coap_set_header_uri_path(request, service_urls[1]);
 
-      printf("--Requesting %s--\n", service_urls[uri_switch]);
+      printf("--Requesting %s--\n", service_urls[1]);
 
       PRINT6ADDR(&server_ipaddr);
       PRINTF(" : %u\n", UIP_HTONS(REMOTE_PORT));
@@ -168,7 +138,6 @@ PROCESS_THREAD(node_otp, ev, data)
 
       printf("\n--Done--\n");
 
-      uri_switch = (uri_switch + 1) % NUMBER_OF_URLS;
     }
 #endif
   }
