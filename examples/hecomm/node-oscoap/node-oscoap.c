@@ -41,9 +41,10 @@
 #include <string.h>
 #include "contiki.h"
 #include "contiki-net.h"
-#include "er-coap-engine.h"
 #include "rest-engine.h"
+#include "er-coap-engine.h"
 #include "dev/button-sensor.h"
+#include "er-oscoap.h"
 
 #define DEBUG 1
 #if DEBUG
@@ -70,6 +71,18 @@
 #define REMOTE_PORT     UIP_HTONS(COAP_DEFAULT_PORT)
 
 extern resource_t res_hello, res_key, res_compartner;
+
+
+/*uint8_t sender_id[] =  { 0x73, 0x65, 0x72, 0x76, 0x65, 0x72 };
+uint8_t receiver_id[] = { 0x63, 0x6C, 0x69, 0x65, 0x6E, 0x74 };*/
+uint8_t sender_id[] =  { 0, 0, 0, 0, 0, 0 };
+uint8_t receiver_id[] = { 0, 0, 0, 0, 0, 0 };
+
+uint8_t master_secret[35] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+            0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 
+            0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 
+            0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23}; 
+
 
 PROCESS(node_oscoap, "Erbium Example Client: node OTP");
 AUTOSTART_PROCESSES(&node_oscoap);
@@ -110,7 +123,13 @@ PROCESS_THREAD(node_oscoap, ev, data)
 
   /* receives all CoAP messages */
   //coap_init_engine();
+  oscoap_ctx_store_init();
 
+  //Interop
+
+  if(oscoap_derrive_ctx(master_secret, 35, NULL, 0, 12, 1,sender_id, 6, receiver_id, 6, 32) == 0) {
+    printf("Error: Could not derive new Context!\n");
+  }
 
 #if PLATFORM_HAS_BUTTON
   SENSORS_ACTIVATE(button_sensor);
