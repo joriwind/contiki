@@ -2,6 +2,8 @@
 //  Determine which cryptographic library we are goig to be usig
 //
 
+#define USE_MBED_TLS
+
 #if defined(USE_MBED_TLS)
 #if defined(USE_OPEN_SSL) || defined(USE_BCRYPT)
 #error Only Define One Crypto Package
