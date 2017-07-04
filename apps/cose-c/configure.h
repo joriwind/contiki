@@ -1,3 +1,10 @@
+
+/**
+ *  Using the CBOR context
+ */
+#define USE_CBOR_CONTEXT
+
+
 //
 //  Determine which cryptographic library we are goig to be usig
 //
