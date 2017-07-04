@@ -13,50 +13,16 @@ extern "C" {
 #include <string.h>
 #include <assert.h>
 #include <math.h>
+#include <arpa/inet.h> // needed for ntohl (e.g.) on Linux
 
-#ifdef CONTIKI
-#define CBOR_NO_FLOAT 1
-#include <uip.h>
-#define ntohl(x) uip_ntohl(x)
-#define ntohs(x) uip_ntohs(x)
-#else
-#include <arpa/inet.h>
-#endif
-
-#include "cn-cbor.h"
-
-#ifdef CONTIKI
-#include "memb.h"
-
-#ifndef CBOR_MAX_ELEM
-# define CBOR_MAX_ELEM 64
-#endif
-
-MEMB(cbor_pool, cn_cbor, CBOR_MAX_ELEM);
-
-static inline
-cn_cbor *cn_cbor_calloc() {
-  cn_cbor *cb = (cn_cbor *)memb_alloc(&cbor_pool);
-  if (cb) {
-    memset(cb, 0, sizeof(cn_cbor));
-  }
-  return cb;
-}
-
-#define CN_CBOR_CALLOC() cn_cbor_calloc()
-#define CN_CBOR_FREE(cb) memb_free(&cbor_pool, (cb))
-#else
-// can be redefined, e.g. for pool allocation
-#ifndef CN_CBOR_CALLOC
-#define CN_CBOR_CALLOC() calloc(1, sizeof(cn_cbor))
-#define CN_CBOR_FREE(cb) free((void*)(cb))
-#endif
-#endif
+#include "cn-cbor/cn-cbor.h"
+#include "cbor.h"
 
 #define CN_CBOR_FAIL(code) do { pb->err = code;  goto fail; } while(0)
 
-void cn_cbor_free(const cn_cbor* cb) {
-  cn_cbor* p = (cn_cbor*) cb;
+void cn_cbor_free(cn_cbor* cb CBOR_CONTEXT) {
+  cn_cbor* p = cb;
+  assert(!p || !p->parent);
   while (p) {
     cn_cbor* p1;
     while ((p1 = p->first_child)) { /* go down */
@@ -66,7 +32,7 @@ void cn_cbor_free(const cn_cbor* cb) {
       if ((p1 = p->parent))
         p1->first_child = 0;
     }
-    CN_CBOR_FREE(p);
+    CN_CBOR_FREE_CONTEXT(p);
     p = p1;
   }
 }
@@ -81,7 +47,7 @@ static double decode_half(int half) {
   else val = mant == 0 ? INFINITY : NAN;
   return half & 0x8000 ? -val : val;
 }
-#endif
+#endif /* CBOR_NO_FLOAT */
 
 /* Fix these if you can't do non-aligned reads */
 #define ntoh8p(p) (*(unsigned char*)(p))
@@ -108,17 +74,33 @@ struct parse_buf {
 };
 
 #define TAKE(pos, ebuf, n, stmt)                \
-  if (n > (ebuf - pos))                         \
-    CN_CBOR_FAIL(CN_CBOR_ERR_OUT_OF_DATA);                \
+  if (n > (size_t)(ebuf - pos))                 \
+    CN_CBOR_FAIL(CN_CBOR_ERR_OUT_OF_DATA);      \
   stmt;                                         \
   pos += n;
 
-static cn_cbor *decode_item (struct parse_buf *pb, cn_cbor* top_parent) {
+static cn_cbor *decode_item (struct parse_buf *pb CBOR_CONTEXT, cn_cbor* top_parent) {
   unsigned char *pos = pb->buf;
   unsigned char *ebuf = pb->ebuf;
   cn_cbor* parent = top_parent;
+  int ib;
+  unsigned int mt;
+  int ai;
+  uint64_t val;
+  cn_cbor* cb = NULL;
+#ifndef CBOR_NO_FLOAT
+  union {
+    float f;
+    uint32_t u;
+  } u32;
+  union {
+    double d;
+    uint64_t u;
+  } u64;
+#endif /* CBOR_NO_FLOAT */
+
 again:
-  TAKE(pos, ebuf, 1, int ib = ntoh8p(pos) );
+  TAKE(pos, ebuf, 1, ib = ntoh8p(pos) );
   if (ib == IB_BREAK) {
     if (!(parent->flags & CN_CBOR_FL_INDEF))
       CN_CBOR_FAIL(CN_CBOR_ERR_BREAK_OUTSIDE_INDEF);
@@ -133,11 +115,11 @@ again:
     }
     goto complete;
   }
-  unsigned int mt = ib >> 5;
-  int ai = ib & 0x1f;
-  uint64_t val = ai;
+  mt = ib >> 5;
+  ai = ib & 0x1f;
+  val = ai;
 
-  cn_cbor* cb = CN_CBOR_CALLOC();
+  cb = CN_CALLOC_CONTEXT();
   if (!cb)
     CN_CBOR_FAIL(CN_CBOR_ERR_OUT_OF_MEMORY);
 
@@ -151,10 +133,6 @@ again:
   }
   parent->last_child = cb;
   parent->length++;
-
-  cn_cbor *it;
-  cn_cbor *it2;
-  uint64_t i;
 
   switch (ai) {
   case AI_1: TAKE(pos, ebuf, 1, val = ntoh8p(pos)) ; break;
@@ -181,7 +159,7 @@ again:
   case MT_BYTES: case MT_TEXT:
     cb->v.str = (char *) pos;
     cb->length = val;
-    TAKE(pos, ebuf, val, );
+    TAKE(pos, ebuf, val, ;);
     break;
   case MT_MAP:
     val <<= 1;
@@ -197,41 +175,35 @@ again:
     goto push;
   case MT_PRIM:
     switch (ai) {
-    case VAL_NIL: cb->type = CN_CBOR_NULL; break;
     case VAL_FALSE: cb->type = CN_CBOR_FALSE; break;
-    case VAL_TRUE: cb->type = CN_CBOR_TRUE; break;
-    case AI_2: 
-#ifdef CBOR_NO_FLOAT
-      CN_CBOR_FAIL(CN_CBOR_ERR_FLOAT_NOT_SUPPORTED);
-#else
-      cb->type = CN_CBOR_DOUBLE; cb->v.dbl = decode_half(val); 
-#endif
- break;
-    case AI_4:
-#ifdef CBOR_NO_FLOAT
-      CN_CBOR_FAIL(CN_CBOR_ERR_FLOAT_NOT_SUPPORTED);
-#else
+    case VAL_TRUE:  cb->type = CN_CBOR_TRUE;  break;
+    case VAL_NIL:   cb->type = CN_CBOR_NULL;  break;
+    case VAL_UNDEF: cb->type = CN_CBOR_UNDEF; break;
+    case AI_2:
+#ifndef CBOR_NO_FLOAT
       cb->type = CN_CBOR_DOUBLE;
-      union {
-        float f;
-        uint32_t u;
-      } u32;
+      cb->v.dbl = decode_half(val);
+#else /*  CBOR_NO_FLOAT */
+      CN_CBOR_FAIL(CN_CBOR_ERR_FLOAT_NOT_SUPPORTED);
+#endif /*  CBOR_NO_FLOAT */
+      break;
+    case AI_4:
+#ifndef CBOR_NO_FLOAT
+      cb->type = CN_CBOR_DOUBLE;
       u32.u = val;
       cb->v.dbl = u32.f;
-#endif
+#else /*  CBOR_NO_FLOAT */
+      CN_CBOR_FAIL(CN_CBOR_ERR_FLOAT_NOT_SUPPORTED);
+#endif /*  CBOR_NO_FLOAT */
       break;
     case AI_8:
-#ifdef CBOR_NO_FLOAT
-      CN_CBOR_FAIL(CN_CBOR_ERR_FLOAT_NOT_SUPPORTED);
-#else
+#ifndef CBOR_NO_FLOAT
       cb->type = CN_CBOR_DOUBLE;
-      union {
-        double d;
-        uint64_t u;
-      } u64;
       u64.u = val;
       cb->v.dbl = u64.d;
-#endif
+#else /*  CBOR_NO_FLOAT */
+      CN_CBOR_FAIL(CN_CBOR_ERR_FLOAT_NOT_SUPPORTED);
+#endif /*  CBOR_NO_FLOAT */
       break;
     default: cb->v.uint = val;
     }
@@ -266,41 +238,31 @@ fail:
   return 0;
 }
 
-const cn_cbor* cn_cbor_decode(const char* buf, size_t len, cn_cbor_errback *errp) {
-  cn_cbor catcher = {CN_CBOR_INVALID};
-  struct parse_buf pb = {(unsigned char *)buf, (unsigned char *)buf+len};
-  cn_cbor* ret = decode_item(&pb, &catcher);
-  if (ret) {
-    ret->parent = 0;            /* mark as top node */
+cn_cbor* cn_cbor_decode(const unsigned char* buf, size_t len CBOR_CONTEXT, cn_cbor_errback *errp) {
+  cn_cbor catcher = {CN_CBOR_INVALID, 0, {0}, 0, NULL, NULL, NULL, NULL};
+  struct parse_buf pb;
+  cn_cbor* ret;
+
+  pb.buf  = (unsigned char *)buf;
+  pb.ebuf = (unsigned char *)buf+len;
+  pb.err  = CN_CBOR_NO_ERROR;
+  ret = decode_item(&pb CBOR_CONTEXT_PARAM, &catcher);
+  if (ret != NULL) {
+    /* mark as top node */
+    ret->parent = NULL;
   } else {
     if (catcher.first_child) {
       catcher.first_child->parent = 0;
-      cn_cbor_free(catcher.first_child);
+      cn_cbor_free(catcher.first_child CBOR_CONTEXT_PARAM);
     }
-  fail:
+//fail:
     if (errp) {
       errp->err = pb.err;
       errp->pos = pb.buf - (unsigned char *)buf;
     }
-    return 0;
-  }
-  return ret;
-}
-
-const cn_cbor* cn_cbor_mapget_uint(const cn_cbor* cb, unsigned long key) {
-  if (!cb || cb->type != CN_CBOR_MAP) {
     return NULL;
   }
-
-  cb = cb->first_child;
-  while (cb && ((cb->type != CN_CBOR_UINT) || (cb->v.uint != key))) {
-    if (!(cb = cb->next)) {
-      return NULL;
-    }
-    cb = cb->next;
-  }
-
-  return cb ? cb->next : NULL;
+  return ret;
 }
 
 #ifdef  __cplusplus
