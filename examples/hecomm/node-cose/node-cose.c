@@ -117,7 +117,7 @@ PROCESS_THREAD(node_cose, ev, data)
   /* Initialize the REST engine. */
   rest_init_engine();
   rest_activate_resource(&res_hello, "test/hello");
-  //rest_activate_resource(&res_os_hello, "test/os-hello");
+  rest_activate_resource(&res_os_hello, "test/os-hello");
   rest_activate_resource(&res_key, "hecomm/osskey");
   rest_activate_resource(&res_compartner, "hecomm/commpartner");
 
