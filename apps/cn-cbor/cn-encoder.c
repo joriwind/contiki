@@ -8,13 +8,13 @@ extern "C" {
 } /* Duh. */
 #endif
 
-#include <arpa/inet.h>
+
 #include <string.h>
-#include <strings.h>
+//#include <strings.h>
 #include <stdbool.h>
 #include <assert.h>
 
-#include "cn-cbor/cn-cbor.h"
+#include "cn-cbor.h"
 #include "cbor.h"
 
 #define hton8p(p) (*(uint8_t*)(p))

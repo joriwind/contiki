@@ -18,6 +18,19 @@ extern "C" {
 #include <stdint.h>
 #include <stddef.h>
 //#include <unistd.h>
+#include <stdlib.h>
+void * calloc (size_t nm, size_t es);
+
+#ifdef CONTIKI
+#define CBOR_NO_FLOAT 1
+#include <uip.h>
+#define ntohl(x) uip_ntohl(x)
+#define ntohs(x) uip_ntohs(x)
+#define htons(x) uip_htons(x)
+#define htonl(x) uip_htonl(x)
+#else
+#include <arpa/inet.h>
+#endif
 
 typedef int ssize_t;
 #define USE_CBOR_CONTEXT
