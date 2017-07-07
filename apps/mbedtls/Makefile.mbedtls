@@ -1,1 +1,1 @@
-mbedtls_src = ccm.c md.c ctr_drbg.c entropy.c cipher.c aes.c cipher_wrap.c
+mbedtls_src = ccm.c md.c ctr_drbg.c entropy.c cipher.c aes.c cipher_wrap.c aes_alt.c
