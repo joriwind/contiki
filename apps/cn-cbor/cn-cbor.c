@@ -18,6 +18,76 @@ extern "C" {
 #include "cn-cbor.h"
 #include "cbor.h"
 
+
+#define DEBUG 1
+#if DEBUG
+#include <stdio.h>
+#define PRINTF(...) printf(__VA_ARGS__)
+#define PRINT6ADDR(addr) PRINTF("[%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x]", ((uint8_t *)addr)[0], ((uint8_t *)addr)[1], ((uint8_t *)addr)[2], ((uint8_t *)addr)[3], ((uint8_t *)addr)[4], ((uint8_t *)addr)[5], ((uint8_t *)addr)[6], ((uint8_t *)addr)[7], ((uint8_t *)addr)[8], ((uint8_t *)addr)[9], ((uint8_t *)addr)[10], ((uint8_t *)addr)[11], ((uint8_t *)addr)[12], ((uint8_t *)addr)[13], ((uint8_t *)addr)[14], ((uint8_t *)addr)[15])
+#define PRINTLLADDR(lladdr) PRINTF("[%02x:%02x:%02x:%02x:%02x:%02x]", (lladdr)->addr[0], (lladdr)->addr[1], (lladdr)->addr[2], (lladdr)->addr[3], (lladdr)->addr[4], (lladdr)->addr[5])
+#else
+#define PRINTF(...)
+#define PRINT6ADDR(addr)
+#define PRINTLLADDR(addr)
+#endif
+
+#ifdef CONTIKI
+//#include "memb.h"
+#include "lib/mmem.h"
+
+#ifndef CBOR_MAX_ELEM
+# define CBOR_MAX_ELEM 64
+#endif
+
+//MEMB(cbor_pool, cn_cbor, CBOR_MAX_ELEM);
+//static struct mmem mmem;
+
+/* Memory management */
+//void* (*cn_calloc_func)(size_t count, size_t size, void *context);
+//void (*cn_free_func)(void *ptr, void *context);
+extern void * custom_calloc_func(size_t count, size_t size, void *context){
+  /*cn_cbor *cb = (cn_cbor *)memb_alloc(&cbor_pool);
+  if (cb) {
+    memset(cb, 0, sizeof(cn_cbor));
+  }
+  return cb;*/
+  if (mmem_alloc(context, size) == 0){
+    PRINTF("Unable to alloc memory!\n");
+    return context;
+  }else {
+    void *ptr;
+      ptr = MMEM_PTR((struct mmem *)context);
+    if (ptr){
+      memset(ptr, 0, size);
+    }
+    return ptr;
+  }
+
+}
+
+extern void custom_free_func(void *ptr, void *context){
+  //memb_free(&cbor_pool, ptr);
+  mmem_free(ptr);
+}
+
+
+/*typedef struct cn_cbor_context {
+    // The pool `calloc` routine.  Must allocate and zero.
+    cn_calloc_func calloc_func;
+    //The pool `free` routine.  Often a no-op, but required. 
+    cn_free_func  free_func;
+     //Typically, the pool object, to be used when calling `calloc_func`
+      //  * and `free_func` 
+    void *context;
+} cn_cbor_context;*/
+//cn_cbor_context context = (cn_cbor_context){.calloc_func = custom_calloc_func, .free_func = custom_free_func};
+
+static struct mmem mmem;
+cn_cbor_context context = {.calloc_func = custom_calloc_func, .free_func = custom_free_func, .context = &mmem};
+
+/* MM*/
+#endif
+
 #define CN_CBOR_FAIL(code) do { pb->err = code;  goto fail; } while(0)
 
 void cn_cbor_free(cn_cbor* cb CBOR_CONTEXT) {

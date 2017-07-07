@@ -71,6 +71,10 @@
 // These definitions are here because they aren't required for the public
 // interface, and they were quite confusing in cn-cbor.h
 
+#define USE_CBOR_CONTEXT
+#include "cn-cbor.h"
+
+
 #ifdef USE_CBOR_CONTEXT
 /**
  * Allocate enough space for 1 `cn_cbor` structure.

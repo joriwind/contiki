@@ -35,6 +35,8 @@ void * calloc (size_t nm, size_t es);
 typedef int ssize_t;
 #define USE_CBOR_CONTEXT
 
+
+
 /**
  * All of the different kinds of CBOR values.
  */
@@ -185,6 +187,7 @@ typedef struct cn_cbor_errback {
  * @param[in] context The allocation context
  */
 typedef void* (*cn_calloc_func)(size_t count, size_t size, void *context);
+extern void * custom_calloc_func(size_t count, size_t size, void *context);
 
 /**
  * Free memory previously allocated with a context.  If using a pool allocator,
@@ -198,6 +201,7 @@ typedef void* (*cn_calloc_func)(size_t count, size_t size, void *context);
  * @return         [description]
  */
 typedef void (*cn_free_func)(void *ptr, void *context);
+extern void custom_free_func(void *ptr, void *context);
 
 /**
  * The allocation context.
@@ -211,6 +215,10 @@ typedef struct cn_cbor_context {
       * and `free_func` */
     void *context;
 } cn_cbor_context;
+
+
+
+cn_cbor_context context;
 
 /** When USE_CBOR_CONTEXT is defined, many functions take an extra `context`
   * parameter */
