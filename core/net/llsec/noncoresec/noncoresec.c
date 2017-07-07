@@ -104,7 +104,7 @@ send(mac_callback_t sent, void *ptr)
   packetbuf_set_attr(PACKETBUF_ATTR_FRAME_TYPE, FRAME802154_DATAFRAME);
   packetbuf_set_attr(PACKETBUF_ATTR_SECURITY_LEVEL, LLSEC802154_SECURITY_LEVEL);
   anti_replay_set_counter();
-  //PRINTF("noncoresec: set counter ctr %"PRIu32"\n",
+  //PRINTF("noncoresec: set counter ctr %u\n",
   //         anti_replay_get_counter());
   NETSTACK_MAC.send(sent, ptr);
 }
@@ -136,7 +136,7 @@ input(void)
 
   PRINTF("Received packet:"); 
   PRINTF("sec level: %i", packetbuf_attr(PACKETBUF_ATTR_SECURITY_LEVEL) );
-  PRINTF(", replay ctr %"PRIu32"", anti_replay_get_counter());
+  PRINTF(", replay ctr %u", anti_replay_get_counter());
   const linkaddr_t *addr;
   addr = packetbuf_addr(PACKETBUF_ADDR_SENDER);
   PRINTF(", [%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x]", ((uint8_t *)addr)[0], ((uint8_t *)addr)[1], ((uint8_t *)addr)[2], ((uint8_t *)addr)[3], ((uint8_t *)addr)[4], ((uint8_t *)addr)[5], ((uint8_t *)addr)[6], ((uint8_t *)addr)[7], ((uint8_t *)addr)[8], ((uint8_t *)addr)[9], ((uint8_t *)addr)[10], ((uint8_t *)addr)[11], ((uint8_t *)addr)[12], ((uint8_t *)addr)[13], ((uint8_t *)addr)[14], ((uint8_t *)addr)[15]);
@@ -163,7 +163,7 @@ input(void)
   
   received_mic = dataptr + data_len;
   if(memcmp(generated_mic, received_mic, LLSEC802154_MIC_LENGTH) != 0) {
-    PRINTF("noncoresec: received nonauthentic frame %"PRIu32"\n",
+    PRINTF("noncoresec: received nonauthentic frame %u\n",
         anti_replay_get_counter());
     return;
   }
@@ -196,12 +196,12 @@ input(void)
     anti_replay_init_info(info);
   } else {
     if(anti_replay_was_replayed(info)) {
-       PRINTF("noncoresec: received replayed frame %"PRIu32"\n",
+       PRINTF("noncoresec: received replayed frame %u\n",
            anti_replay_get_counter());
        return;
     }
   }
-  PRINTF("noncoresec: VALID MESSAGE: replay nr: %"PRIu32"\n", anti_replay_get_counter());
+  PRINTF("noncoresec: VALID MESSAGE: replay nr: %u\n", anti_replay_get_counter());
   
   NETSTACK_NETWORK.input();
 }

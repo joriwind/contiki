@@ -55,10 +55,15 @@
 #define PRINTLLADDR(addr)
 #endif
 
-typedef unsigned char byte;
+//typedef unsigned char byte;
 int encrypt(uint8_t *buffer, const uint8_t *message, size_t len, const byte *key, size_t szKey, uint16_t prefsz);
 
 static void res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
+
+#include "lib/mmem.h"
+static struct mmem mmem;
+static cn_cbor_context ctx = (cn_cbor_context){.calloc_func = custom_calloc_func, .free_func = custom_free_func, .context = &mmem};
+
 
 /*
  * A handler function named [resource name]_handler must be implemented for each RESOURCE.
@@ -108,8 +113,9 @@ res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferr
     memcpy(buffer, message, length);
   } 
 
-  const byte *key;
-  key = calloc(128, sizeof(byte));  //All zero?
+  const byte key[128];
+  memset(key, 0, 128);
+  //key = calloc(128, sizeof(byte));  //All zero?
   
   length = encrypt(buffer, message, length, key, 128, preferred_size);
   
@@ -124,7 +130,7 @@ int encrypt(uint8_t *buffer, const uint8_t *message, size_t len, const byte *key
   //bool COSE_Encrypt_encrypt(HCOSE_ENCRYPT cose, const byte * pbKey, size_t cbKey, cose_errback * perror);
   cose_errback err;
   HCOSE_ENCRYPT objcose;
-  cn_cbor_context ctx;
+  
 
   /* INIT FLAGS
   COSE_INIT_FLAGS_NONE=0,
