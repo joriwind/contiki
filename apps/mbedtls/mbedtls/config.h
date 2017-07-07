@@ -14,8 +14,6 @@
 #define MBEDTLS_AES_C
 #define MBEDTLS_CIPHER_C
 
-#define MBEDTLS_AES_ROM_TABLES
-
 
 #include "mbedtls/check_config.h"
 
