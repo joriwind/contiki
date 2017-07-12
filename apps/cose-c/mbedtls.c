@@ -28,6 +28,7 @@ bool AES_CCM_Decrypt(COSE_Enveloped * pcose, int TSize, int LSize, const byte * 
 	const cn_cbor * pIV = NULL;
 	mbedtls_cipher_id_t cipher;
 #ifdef USE_CBOR_CONTEXT
+#warning CONTEXT ENABLED!!!
 	cn_cbor_context * context = &pcose->m_message.m_allocContext;
 #endif
 
@@ -76,6 +77,7 @@ bool AES_CCM_Encrypt(COSE_Enveloped * pcose, int TSize, int LSize, const byte * 
 	const cn_cbor * cbor_iv = NULL;
 	cn_cbor * cbor_iv_t = NULL;
 #ifdef USE_CBOR_CONTEXT
+#warning AES_ENCYRPT CONTEXT ENABLED!!
 	cn_cbor_context * context = &pcose->m_message.m_allocContext;
 #endif
 	cn_cbor * cnTmp = NULL;

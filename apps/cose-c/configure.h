@@ -57,7 +57,7 @@
 //
 
 #define USE_HMAC_256_64
-#define USE_HMAC_256_256
+//#define USE_HMAC_256_256
 /*#define USE_HMAC_384_384
 #define USE_HMAC_512_512*/
 #if defined(USE_HMAC_256_64) || defined(USE_HMAC_256_256) || defined(USE_HMAC_384_384) || defined(USE_HMAC_512_512)
