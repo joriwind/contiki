@@ -60,9 +60,9 @@ int encrypt(uint8_t *buffer, const uint8_t *message, size_t len, const byte *key
 
 static void res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
 
-#include "lib/mmem.h"
-static struct mmem mmem;
-static cn_cbor_context ctx = (cn_cbor_context){.calloc_func = custom_calloc_func, .free_func = custom_free_func, .context = &mmem};
+//#include "lib/mmem.h"
+//static struct mmem mmem;
+//static cn_cbor_context ctx = (cn_cbor_context){.calloc_func = custom_calloc_func, .free_func = custom_free_func, .context = &mmem};
 
 
 /*
@@ -138,7 +138,7 @@ int encrypt(uint8_t *buffer, const uint8_t *message, size_t len, const byte *key
 	COSE_INIT_FLAGS_NO_CBOR_TAG=2,
 	COSE_INIT_FLAGS_ZERO_FORM=4
   */
-  objcose = COSE_Encrypt_Init(COSE_INIT_FLAGS_ZERO_FORM, &ctx,&err);
+  objcose = COSE_Encrypt_Init(COSE_INIT_FLAGS_ZERO_FORM, &context,&err);
 
   if( objcose == NULL ) {
     PRINTF("Error in init cose: %i\n", err.err);

@@ -107,7 +107,9 @@ typedef struct _COSE_COUNTER_SIGN {
 * @param[in]  ctx  The allocation context, or NULL for calloc.
 * @return          A pointer to a `cn_cbor` or NULL on failure
 */
-#define CN_CALLOC(ctx) ((ctx) && (ctx)->calloc_func) ? \
+#define CN_CALLOC(ctx) (ctx)->calloc_func(1, sizeof(cn_cbor), (ctx)->context)
+
+//#define CN_CALLOC(ctx) ((ctx) && (ctx)->calloc_func) ? \
     (ctx)->calloc_func(1, sizeof(cn_cbor), (ctx)->context) : \
     calloc(1, sizeof(cn_cbor));
 
@@ -119,7 +121,9 @@ typedef struct _COSE_COUNTER_SIGN {
 * @param[in]	size	Size of item to allocate
 * @return				A pointer to the object needed
 */
-#define COSE_CALLOC(count, size, ctx) ((((ctx)) && ((ctx)->calloc_func)) ? \
+#define COSE_CALLOC(count, size, ctx) ((ctx)->calloc_func(count, size, (ctx)->context))
+
+//#define COSE_CALLOC(count, size, ctx) ((((ctx)) && ((ctx)->calloc_func)) ? \
 	((ctx)->calloc_func(count, size, (ctx)->context)) : \
 	calloc(count, size))
 
@@ -128,7 +132,8 @@ typedef struct _COSE_COUNTER_SIGN {
 * @param  free_func [description]
 * @return           [description]
 */
-#define COSE_FREE(ptr, ctx) ((((ctx) && (ctx)->free_func)) ? \
+#define COSE_FREE(ptr, ctx) ((ctx)->free_func((ptr), (ctx)->context))
+//#define COSE_FREE(ptr, ctx) ((((ctx) && (ctx)->free_func)) ? \
     ((ctx)->free_func((ptr), (ctx)->context)) : \
     free((ptr)))
 

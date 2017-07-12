@@ -10,12 +10,14 @@
 #ifdef USE_CBOR_CONTEXT
 #define CBOR_CONTEXT_PARAM , context
 
-#define CN_CALLOC(ctx) ((ctx) && (ctx)->calloc_func) ? \
+#define CN_CALLOC(ctx) (ctx)->calloc_func(1, sizeof(cn_cbor), (ctx)->context)
+//#define CN_CALLOC(ctx) ((ctx) && (ctx)->calloc_func) ? \
     (ctx)->calloc_func(1, sizeof(cn_cbor), (ctx)->context) : \
     calloc(1, sizeof(cn_cbor));
 
 #define CN_CALLOC_CONTEXT() CN_CALLOC(context)
-#define CN_CBOR_CALLOC(c, i, ctx) ((ctx) && (ctx)->calloc_func) ? \
+#define CN_CBOR_CALLOC(c, i, ctx) (ctx)->calloc_func(c, i, (ctx)->context)
+//#define CN_CBOR_CALLOC(c, i, ctx) ((ctx) && (ctx)->calloc_func) ? \
     (ctx)->calloc_func(c, i, (ctx)->context) : \
 	calloc(c, i)
 #else
@@ -185,7 +187,8 @@ cn_cbor * cn_cbor_null_create(CBOR_CONTEXT_COMMA cn_cbor_errback * errp)
 }
 
 
-unsigned char RgbDontUse4[8 * 1024];
+//unsigned char RgbDontUse4[8 * 1024];
+unsigned char RgbDontUse4[128];
 
 size_t cn_cbor_encode_size(cn_cbor * object)
 {

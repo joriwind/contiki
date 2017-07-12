@@ -32,26 +32,29 @@ extern "C" {
 #endif
 
 #ifdef CONTIKI
-//#include "memb.h"
-#include "lib/mmem.h"
+#include "memb.h"
+//#include "lib/mmem.h"
 
 #ifndef CBOR_MAX_ELEM
 # define CBOR_MAX_ELEM 64
 #endif
 
-//MEMB(cbor_pool, cn_cbor, CBOR_MAX_ELEM);
+MEMB(cbor_pool, cn_cbor, CBOR_MAX_ELEM);
 //static struct mmem mmem;
 
 /* Memory management */
 //void* (*cn_calloc_func)(size_t count, size_t size, void *context);
 //void (*cn_free_func)(void *ptr, void *context);
 extern void * custom_calloc_func(size_t count, size_t size, void *context){
-  /*cn_cbor *cb = (cn_cbor *)memb_alloc(&cbor_pool);
+  cn_cbor *cb = (cn_cbor *)memb_alloc(&cbor_pool);
+  if (size != sizeof(cn_cbor)){
+    PRINTF("NOT CBOR SIZE??\n");
+  }
   if (cb) {
     memset(cb, 0, sizeof(cn_cbor));
   }
-  return cb;*/
-  if (mmem_alloc(context, size) == 0){
+  return cb;
+  /* if (mmem_alloc(context, size) == 0){
     PRINTF("Unable to alloc memory!\n");
     return context;
   }else {
@@ -61,13 +64,13 @@ extern void * custom_calloc_func(size_t count, size_t size, void *context){
       memset(ptr, 0, size);
     }
     return ptr;
-  }
+  } */
 
 }
 
 extern void custom_free_func(void *ptr, void *context){
-  //memb_free(&cbor_pool, ptr);
-  mmem_free(ptr);
+  memb_free(&cbor_pool, ptr);
+  //mmem_free(ptr);
 }
 
 
@@ -82,8 +85,8 @@ extern void custom_free_func(void *ptr, void *context){
 } cn_cbor_context;*/
 //cn_cbor_context context = (cn_cbor_context){.calloc_func = custom_calloc_func, .free_func = custom_free_func};
 
-static struct mmem mmem;
-cn_cbor_context context = {.calloc_func = custom_calloc_func, .free_func = custom_free_func, .context = &mmem};
+//static struct mmem mmem;
+cn_cbor_context context = {.calloc_func = custom_calloc_func, .free_func = custom_free_func, .context = &cbor_pool};
 
 /* MM*/
 #endif

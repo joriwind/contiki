@@ -82,7 +82,8 @@
  * @param[in]  ctx  The allocation context, or NULL for calloc.
  * @return          A pointer to a `cn_cbor` or NULL on failure
  */
-#define CN_CALLOC(ctx) ((ctx) && (ctx)->calloc_func) ? \
+ #define CN_CALLOC(ctx) (ctx)->calloc_func(1, sizeof(cn_cbor), (ctx)->context)
+//#define CN_CALLOC(ctx) ((ctx) && (ctx)->calloc_func) ? \
     (ctx)->calloc_func(1, sizeof(cn_cbor), (ctx)->context) : \
     calloc(1, sizeof(cn_cbor));
 
@@ -91,7 +92,8 @@
  * @param  free_func [description]
  * @return           [description]
  */
-#define CN_FREE(ptr, ctx) ((ctx) && (ctx)->free_func) ? \
+ #define CN_FREE(ptr, ctx) (ctx)->free_func((ptr), (ctx)->context)
+//#define CN_FREE(ptr, ctx) ((ctx) && (ctx)->free_func) ? \
     (ctx)->free_func((ptr), (ctx)->context) : \
     free((ptr));
 
