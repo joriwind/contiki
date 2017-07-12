@@ -29,6 +29,29 @@
 
 #include "mbedtls/platform.h"
 
+
+#define MBEDTLS_PLATFORM_STD_FREE c_free
+#define MBEDTLS_PLATFORM_STD_CALLOC c_calloc
+
+#include <stddef.h>
+#include "lib/mmem.h"
+#include "stdio.h"
+ 
+static struct mmem mmem;
+static void * c_calloc(size_t n, size_t size ){
+    if(mmem_alloc(&mmem, size * n) == 0) {
+        printf("memory allocation failed\n");
+        return 0;
+    } else {
+        printf("memory allocation succeeded\n");
+        return MMEM_PTR(&mmem);
+    }
+}
+
+static void c_free(void *ptr ){
+    mmem_free(ptr);
+}
+
 #if defined(MBEDTLS_PLATFORM_MEMORY)
 #if !defined(MBEDTLS_PLATFORM_STD_CALLOC)
 static void *platform_calloc_uninit( size_t n, size_t size )

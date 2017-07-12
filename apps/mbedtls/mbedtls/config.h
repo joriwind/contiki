@@ -21,6 +21,11 @@
 
 #define MBEDTLS_CIPHER_C
 
+#define MBEDTLS_PLATFORM_C
+#define MBEDTLS_PLATFORM_MEMORY
+
+
+
 
 #include "mbedtls/check_config.h"
 
