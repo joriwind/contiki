@@ -71,11 +71,8 @@
 #undef REST_MAX_CHUNK_SIZE
 #define REST_MAX_CHUNK_SIZE            64//48
 
-/* Estimate your header size, especially when using Proxy-Uri. */
-/*
-   #undef COAP_MAX_HEADER_SIZE
-   #define COAP_MAX_HEADER_SIZE           70
- */
+ /* Amount of concurrent udp connections */
+ #define UIP_CONF_UDP_CONNS 4
 
 /* Multiplies with chunk size, be aware of memory constraints. */
 #undef COAP_MAX_OPEN_TRANSACTIONS

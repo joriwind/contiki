@@ -1,2 +1,2 @@
-cose-c_src = cbor.c Encrypt.c Encrypt0.c Recipient.c Cose.c mbedtls.c
+cose-c_src = cbor.c Encrypt.c Encrypt0.c Recipient.c Cose.c contikicrypt.c
 #cose-c_src = cbor.c MacMessage.c MacMessage0.c Sign.c Sign0.c Encrypt.c Encrypt0.c Recipient.c SignerInfo.c Cose.c mbedtls.c

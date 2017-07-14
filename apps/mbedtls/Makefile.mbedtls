@@ -1,1 +1,2 @@
-mbedtls_src = platform.c ccm.c md.c ctr_drbg.c entropy.c cipher.c aes.c cipher_wrap.c aes_alt.c 
+mbedtls_src = platform.c ccm.c md.c cipher.c cipher_wrap.c aes.c  aes_alt.c 
+#ctr_drbg.c entropy.c 

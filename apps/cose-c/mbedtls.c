@@ -10,8 +10,8 @@
 
 #include "mbedtls/ccm.h"
 #include "mbedtls/md.h"
-#include "mbedtls/ctr_drbg.h"
-#include "mbedtls/entropy.h"
+//#include "mbedtls/ctr_drbg.h"
+//#include "mbedtls/entropy.h"
 
 bool FUseCompressed = true;
 
@@ -669,7 +669,7 @@ void diff(unsigned char* a, size_t a_l, unsigned char* b, size_t b_l){
 	printf("\n");
 }
 */
-
+/*
 bool HMAC_Create(COSE_MacMessage * pcose, int HSize, int TSize, const byte * pbKey, size_t cbKey, const byte * pbAuthData, size_t cbAuthData, cose_errback * perr)
 {
 	byte * rgbOut = NULL;
@@ -760,6 +760,8 @@ errorReturn:
 	mbedtls_md_free(&contx); 
 	return false;
 }
+*/
+
 /*
 
 #define COSE_Key_EC_Curve -1
@@ -1130,6 +1132,9 @@ void rand_bytes(byte * pb, size_t cb){
         printf("rand byute done\n");
 }*/
 //TODO HOW TO GENERATE GOOD RANDOM BYTES
+
+#ifndef CONTIKI
+#warning NO CONTIKI!
 static const unsigned char entropy_source_pr[96] =
    { 0xc1, 0x80, 0x81, 0xa6, 0x5d, 0x44, 0x02, 0x16,
      0x19, 0xb3, 0xf1, 0x80, 0xb1, 0xc9, 0x20, 0x02,
@@ -1156,9 +1161,20 @@ static int ctr_drbg_self_test_entropy( void *data, unsigned char *buf, size_t le
     return( 0 );
  }
 
+ #else
+ #warning CONTIKI ALRIGHT
+ static const unsigned short seed = 25647;
+ 
+ #endif
+
+
+#include <random.h>
+
 void rand_bytes(byte* pb, size_t cb){
      
-     mbedtls_ctr_drbg_context ctx;
+    
+#ifndef CONTIKI
+	mbedtls_ctr_drbg_context ctx;
     // unsigned char buf[16];
      
      mbedtls_ctr_drbg_init( &ctx );
@@ -1172,6 +1188,17 @@ void rand_bytes(byte* pb, size_t cb){
      //memcmp( buf, result_pr, MBEDTLS_CTR_DRBG_BLOCKSIZE ) );
      
      mbedtls_ctr_drbg_free( &ctx );
+#else
+	
+	//CONTIKI way
+	//random_init(seed);
+	int i;
+	for( i = 0; i < cb; i++){
+		pb[i] = (byte)random_rand();
+	}
+#endif
+
+
 }
 //END OF TODO RANDOM BYTES
 
