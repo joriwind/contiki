@@ -69,7 +69,7 @@
 #define LOCAL_PORT      UIP_HTONS(COAP_DEFAULT_PORT + 1)
 #define REMOTE_PORT     UIP_HTONS(COAP_DEFAULT_PORT)
 
-extern resource_t res_hello, res_os_hello, res_key, res_compartner;
+extern resource_t res_hello, res_os_hello, res_os_key, res_compartner;
 
 
 /*uint8_t sender_id[] =  { 0x73, 0x65, 0x72, 0x76, 0x65, 0x72 };
@@ -77,10 +77,10 @@ uint8_t receiver_id[] = { 0x63, 0x6C, 0x69, 0x65, 0x6E, 0x74 };*/
 uint8_t sender_id[] =  { 0, 0, 0, 0, 0, 0 };
 uint8_t receiver_id[] = { 0, 0, 0, 0, 0, 0 };
 
-uint8_t master_secret[35] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+/* uint8_t master_secret[35] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
             0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 
             0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 
-            0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23}; 
+            0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23};  */
 
 
 PROCESS(node_cose, "Erbium Example Client: node OTP");
@@ -118,7 +118,7 @@ PROCESS_THREAD(node_cose, ev, data)
   rest_init_engine();
   rest_activate_resource(&res_hello, "test/hello");
   rest_activate_resource(&res_os_hello, "test/os-hello");
-  rest_activate_resource(&res_key, "hecomm/osskey");
+  rest_activate_resource(&res_os_key, "hecomm/osskey");
   rest_activate_resource(&res_compartner, "hecomm/commpartner");
 
   /* receives all CoAP messages */

@@ -3,11 +3,9 @@
 #include <string.h>
 #include "contiki.h"
 #include "rest-engine.h"
-#ifdef ENABLE_OTP
-#include "ospad.h"
-#endif
+#include "obj-sec.h"
 
-#define DEBUG 1
+#define DEBUG 0
 #if DEBUG
 #include <stdio.h>
 #define PRINTF(...) printf(__VA_ARGS__)
@@ -22,7 +20,7 @@
 static void res_post_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
 
 /* A simple actuator example. Toggles the red led */
-RESOURCE(res_key,
+RESOURCE(res_os_key,
          "title=\"OSSKey ?key=value\";rt=\"Control\"",
          NULL,
          res_post_handler,
@@ -38,9 +36,8 @@ res_post_handler(void *request, void *response, uint8_t *buffer, uint16_t prefer
     PRINTF("Key post\n");
     if((len = REST.get_request_payload(request, &key))) {
         PRINTF("OSSKey: %.*s, length: %i\n", len, key, len);
-#ifdef ENABLE_OTP
-        success = setOSSKey(key, len);
-#endif
+
+        objsec_set_key(key);
         if (success > 0){   //Means error from ospad
             PRINTF("Error setting new key!: %i\n", success);
             success = 0;
