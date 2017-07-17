@@ -48,6 +48,10 @@
    #define IEEE802154_CONF_PANID          0xABCD
  */
 
+ /* Memory management */
+#define   MMEM_CONF_SIZE  256
+
+
  #define NETSTACK_CONF_WITH_IPV6 1
  //#define UIP_CONF_IPV6
 

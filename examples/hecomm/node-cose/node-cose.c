@@ -46,6 +46,10 @@
 #include "obj-sec.h"
 #include "dev/button-sensor.h"
 
+#ifndef USE_MEMB
+#include "mmem.h"
+#endif
+
 #define DEBUG 1
 #if DEBUG
 #include <stdio.h>
@@ -115,6 +119,9 @@ PROCESS_THREAD(node_cose, ev, data)
   SERVER_NODE(&server_ipaddr);
 
   objsec_init();
+  #ifndef USE_MEMB
+  mmem_init();
+  #endif
 
   /* Initialize the REST engine. */
   rest_init_engine();

@@ -19,58 +19,70 @@ extern "C" {
 #include "cbor.h"
 
 
-#define DEBUG 0
+#define DEBUG 1
 #if DEBUG
 #include <stdio.h>
 #define PRINTF(...) printf(__VA_ARGS__)
-#define PRINT6ADDR(addr) PRINTF("[%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x]", ((uint8_t *)addr)[0], ((uint8_t *)addr)[1], ((uint8_t *)addr)[2], ((uint8_t *)addr)[3], ((uint8_t *)addr)[4], ((uint8_t *)addr)[5], ((uint8_t *)addr)[6], ((uint8_t *)addr)[7], ((uint8_t *)addr)[8], ((uint8_t *)addr)[9], ((uint8_t *)addr)[10], ((uint8_t *)addr)[11], ((uint8_t *)addr)[12], ((uint8_t *)addr)[13], ((uint8_t *)addr)[14], ((uint8_t *)addr)[15])
-#define PRINTLLADDR(lladdr) PRINTF("[%02x:%02x:%02x:%02x:%02x:%02x]", (lladdr)->addr[0], (lladdr)->addr[1], (lladdr)->addr[2], (lladdr)->addr[3], (lladdr)->addr[4], (lladdr)->addr[5])
 #else
 #define PRINTF(...)
-#define PRINT6ADDR(addr)
-#define PRINTLLADDR(addr)
 #endif
 
 #ifdef CONTIKI
+#ifdef USE_MEMB
 #include "memb.h"
-//#include "lib/mmem.h"
+#else
+#include "mmem.h"
+#endif
+
+
+#ifdef USE_MEMB
 
 #ifndef CBOR_MAX_ELEM
 # define CBOR_MAX_ELEM 64
 #endif
 
 MEMB(cbor_pool, cn_cbor, CBOR_MAX_ELEM);
-//static struct mmem mmem;
+#else
+void * cbor_pool;
+static struct mmem mmem;
+#endif
+
 
 /* Memory management */
 //void* (*cn_calloc_func)(size_t count, size_t size, void *context);
 //void (*cn_free_func)(void *ptr, void *context);
 extern void * custom_calloc_func(size_t count, size_t size, void *context){
+#ifdef USE_MEMB
   cn_cbor *cb = (cn_cbor *)memb_alloc(&cbor_pool);
   if (size != sizeof(cn_cbor)){
-    PRINTF("NOT CBOR SIZE??\n");
+    PRINTF("NOT CBOR SIZE??: c: %i, s: %i, cbor: %i\n", count, size, sizeof(cn_cbor));
   }
   if (cb) {
     memset(cb, 0, sizeof(cn_cbor));
   }
   return cb;
-  /* if (mmem_alloc(context, size) == 0){
+#else
+   if (mmem_alloc(&mmem, size * count) == 0){
     PRINTF("Unable to alloc memory!\n");
-    return context;
+    return NULL;
   }else {
     void *ptr;
-      ptr = MMEM_PTR((struct mmem *)context);
+      ptr = MMEM_PTR(&mmem);
     if (ptr){
       memset(ptr, 0, size);
     }
     return ptr;
-  } */
+  } 
+#endif
 
 }
 
 extern void custom_free_func(void *ptr, void *context){
+#ifdef USE_MEMB
   memb_free(&cbor_pool, ptr);
-  //mmem_free(ptr);
+#else
+  mmem_free(ptr);
+#endif
 }
 
 

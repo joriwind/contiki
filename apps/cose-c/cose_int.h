@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "configure.h"
+#include "cn-cbor.h"
 
 // These definitions are here because they aren't required for the public
 // interface, and they were quite confusing in cn-cbor.h
