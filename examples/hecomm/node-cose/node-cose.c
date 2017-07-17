@@ -43,6 +43,7 @@
 #include "contiki-net.h"
 #include "rest-engine.h"
 #include "er-coap-engine.h"
+#include "obj-sec.h"
 #include "dev/button-sensor.h"
 
 #define DEBUG 1
@@ -83,7 +84,7 @@ uint8_t receiver_id[] = { 0, 0, 0, 0, 0, 0 };
             0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23};  */
 
 
-PROCESS(node_cose, "Erbium Example Client: node OTP");
+PROCESS(node_cose, "Erbium Example Client: node Cose");
 AUTOSTART_PROCESSES(&node_cose);
 
 uip_ipaddr_t server_ipaddr;
@@ -113,6 +114,7 @@ PROCESS_THREAD(node_cose, ev, data)
 
   SERVER_NODE(&server_ipaddr);
 
+  objsec_init();
 
   /* Initialize the REST engine. */
   rest_init_engine();
