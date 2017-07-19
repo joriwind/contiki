@@ -1,6 +1,6 @@
-#The contiki fork for the hecomm 6lowpan network
+# The contiki fork for the hecomm 6lowpan network
 
-##6LoWPAN network
+## 6LoWPAN network
 Devices:
 - [x] network manager (ipv6/rpl-border-router)
 - [ ] IoT node (hecomm/node-cose)
