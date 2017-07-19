@@ -102,7 +102,7 @@ res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferr
   
   //key = calloc(128, sizeof(byte));  //All zero?
   //#if 0
-  length = encrypt(buffer,preferred_size, (const uint8_t *) message, length);
+  length = encrypt(buffer,REST_MAX_CHUNK_SIZE, (const uint8_t *) message, length);
   if (length > REST_MAX_CHUNK_SIZE){
     printf("Too long!\n");
     length = REST_MAX_CHUNK_SIZE;

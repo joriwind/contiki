@@ -44,14 +44,17 @@ extern "C" {
 MEMB(cbor_pool, cn_cbor, CBOR_MAX_ELEM);
 #else
 void * cbor_pool;
-static struct mmem mmem;
+#define POOL_SIZE 10
+static struct mmem mmem_pool[POOL_SIZE];
+static bool active[POOL_SIZE];
 #endif
 
 
 /* Memory management */
 //void* (*cn_calloc_func)(size_t count, size_t size, void *context);
 //void (*cn_free_func)(void *ptr, void *context);
-extern void * custom_calloc_func(size_t count, size_t size, void *context){
+void * custom_calloc_func(size_t count, size_t size, void *context){
+
 #ifdef USE_MEMB
   cn_cbor *cb = (cn_cbor *)memb_alloc(&cbor_pool);
   if (size != sizeof(cn_cbor)){
@@ -61,43 +64,59 @@ extern void * custom_calloc_func(size_t count, size_t size, void *context){
     memset(cb, 0, sizeof(cn_cbor));
   }
   return cb;
+
 #else
-   if (mmem_alloc(&mmem, size * count) == 0){
-    PRINTF("Unable to alloc memory!\n");
-    return NULL;
-  }else {
-    void *ptr;
-      ptr = MMEM_PTR(&mmem);
-    if (ptr){
-      memset(ptr, 0, size);
+
+  //MMEM memory management
+  uint8_t i;
+  void * ptr;
+  for(i = 0; i < POOL_SIZE; i++){
+    if (!active[i]){
+      if(!mmem_alloc(&mmem_pool[i], size * count)){
+        printf("mmem_alloc error, i:%u size:%u\n", i, size * count);
+        return NULL;
+      }
+      active[i] = true;
+      ptr = MMEM_PTR(&mmem_pool[i]);
+      //Setting the memory to 0, emulate calloc functionality
+      //Not checking existance of ptr, mmem_alloc worked
+      memset(ptr, 0, size * count);
+      printf("Calloced %u, ptr: %p\n", i, ptr);
+      return ptr;
     }
-    return ptr;
-  } 
+    
+  }
+  printf("No more elements available to allocate\n");
+  return NULL;  //Non available
+
+   
 #endif
 
 }
 
-extern void custom_free_func(void *ptr, void *context){
+void custom_free_func(void *ptr, void *context){
 #ifdef USE_MEMB
   memb_free(&cbor_pool, ptr);
 #else
-  mmem_free(ptr);
+  printf("Releasing: %p\n", ptr);
+  uint8_t i = 0;
+  void * checkptr;
+  for(i = 0; i < POOL_SIZE; i++){
+    if(active[i]){
+      checkptr = MMEM_PTR(&mmem_pool[i]);
+      if(checkptr == ptr){
+        mmem_free(&mmem_pool[i]);
+        active[i] = false;
+        printf("Released %u, ptr: %p\n", i, checkptr);
+        break;
+      }
+
+    }
+  }
+  
 #endif
 }
 
-
-/*typedef struct cn_cbor_context {
-    // The pool `calloc` routine.  Must allocate and zero.
-    cn_calloc_func calloc_func;
-    //The pool `free` routine.  Often a no-op, but required. 
-    cn_free_func  free_func;
-     //Typically, the pool object, to be used when calling `calloc_func`
-      //  * and `free_func` 
-    void *context;
-} cn_cbor_context;*/
-//cn_cbor_context context = (cn_cbor_context){.calloc_func = custom_calloc_func, .free_func = custom_free_func};
-
-//static struct mmem mmem;
 cn_cbor_context context = {.calloc_func = custom_calloc_func, .free_func = custom_free_func, .context = &cbor_pool};
 
 /* MM*/
@@ -107,6 +126,7 @@ cn_cbor_context context = {.calloc_func = custom_calloc_func, .free_func = custo
 
 void cn_cbor_free(cn_cbor* cb CBOR_CONTEXT) {
   cn_cbor* p = cb;
+  if(!p || !p->parent){
   assert(!p || !p->parent);
   while (p) {
     cn_cbor* p1;
@@ -119,6 +139,7 @@ void cn_cbor_free(cn_cbor* cb CBOR_CONTEXT) {
     }
     CN_CBOR_FREE_CONTEXT(p);
     p = p1;
+  }
   }
 }
 

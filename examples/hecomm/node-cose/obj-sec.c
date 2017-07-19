@@ -10,12 +10,18 @@
 #define PRINTF(...)
 #endif
 
-#define OBJ_SEC_KEYSIZE 128
+#define OBJ_SEC_KEYSIZE 25
 
-const byte key[OBJ_SEC_KEYSIZE];
+
+#define INIT_KEY {0x1, 0x1, 0x1, 0x1, 0x1, \
+                  0x1, 0x1, 0x1, 0x1, 0x1, \
+                  0x1, 0x1, 0x1, 0x1, 0x1, \
+                  0x1, 0x1, 0x1, 0x1, 0x1};
+
+static byte key[OBJ_SEC_KEYSIZE] = INIT_KEY;
 
 void objsec_init(){
-    memset(key, 0, OBJ_SEC_KEYSIZE);
+    //memcpy(key, INIT_KEY, OBJ_SEC_KEYSIZE);
 }
 
 void objsec_set_key(uint8_t *k){
@@ -36,23 +42,38 @@ size_t encrypt(uint8_t *buffer, uint16_t bufferSz, const uint8_t *message, size_
 	COSE_INIT_FLAGS_NO_CBOR_TAG=2,
 	COSE_INIT_FLAGS_ZERO_FORM=4
   */
-  objcose = COSE_Encrypt_Init(COSE_INIT_FLAGS_ZERO_FORM, &context,&err);
+  objcose = COSE_Encrypt_Init(COSE_INIT_FLAGS_NONE, &context,&err);
 
   if( objcose == NULL ) {
     PRINTF("Error in init cose: %i\n", err.err);
     return -1;
   }
+  printf("Init done!\n");
 
   if( !COSE_Encrypt_SetContent(objcose, message, len, &err)){
     PRINTF("Error in set content cose: %i\n",err.err);
-    return -1;
+    goto errorReturn;
   }
+  printf("Setcontent done!\n");
 
   if( !COSE_Encrypt_encrypt(objcose, key, OBJ_SEC_KEYSIZE, &err)){
     PRINTF("Error in encrypt cose: %i\n", err.err);
-    return -1;
+    goto errorReturn;
   }
+  printf("Encrypt done!\n");
 
-  return COSE_Encode(objcose, buffer, 0, bufferSz);
+
+  size_t size = COSE_Encode((HCOSE) objcose, buffer, 0, bufferSz);
+  COSE_Encrypt_Free(objcose);
+  printf("Objcose released!\n");
+  return size;
+
+errorReturn:
+  if (objcose != NULL) {
+    printf("Releasing objcose\n");
+    COSE_Encrypt_Free(objcose);
+    printf("Objcose released!\n");
+  }
+  return -1;
   
 }
