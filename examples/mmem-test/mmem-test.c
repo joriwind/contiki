@@ -44,28 +44,66 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#define NUM_CHUNKS 5
+#define NUM_CHUNKS 8
 #define CHUNK_SIZE 50
 
+#define USE_SEQUENCE
 
-#define OFFSET 4
 #define SECONDS 2
 #define CHUNK_GROWTH cycles
 
+#ifdef USE_SEQUENCE
+#define FREE_SEQUENCE {7, 1, 3, 5, 0, 2, 6, 4}
+#define OFFSET 0
+#else
+#define OFFSET 4
+#define FREE_SEQUENCE 0
+#endif
+
 uint32_t cycles;
+
+static struct mmem memlist[NUM_CHUNKS];
+static bool active[NUM_CHUNKS];
+
+void * calloc_func(struct mmem *list, uint8_t i);
+void free_func(struct mmem *list, uint8_t i);
+
+void * calloc_func(struct mmem *list, uint8_t i){
+  if(!active[i]){
+    if (!mmem_alloc(&list[i], CHUNK_SIZE + CHUNK_GROWTH)){
+      printf("mmem_alloc failed\n");
+      return NULL;
+    }else{
+      active[i] = true;
+      //printf("C%u ", i);
+      return MMEM_PTR(&list[i]);
+    }
+  }
+  printf("No objects available\n");
+  return NULL;    
+    
+}
+
+void free_func(struct mmem *list, uint8_t i){
+  if(active[i]){
+    mmem_free(&list[i]);
+    active[i] = false;
+    //printf("F%u ", i);
+  }
+}
+
 
 /*---------------------------------------------------------------------------*/
 PROCESS(mmem_inorder_tester, "MMEM free in order");
-PROCESS(mmem_revorder_tester, "MMEM free reverse order");
 PROCESS(profiler, "profiler");
 AUTOSTART_PROCESSES(&profiler);
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(mmem_inorder_tester, ev, data)
 {
   uint8_t i;
+  #ifndef USE_SEQUENCE
   uint8_t j;
-  static struct mmem memlist[NUM_CHUNKS];
-  static bool active[NUM_CHUNKS];
+  #endif
 
   PROCESS_BEGIN();
 
@@ -75,30 +113,28 @@ PROCESS_THREAD(mmem_inorder_tester, ev, data)
 
   while (1) {
     /* Allocate the memory... */
+    
     printf(" %u ", CHUNK_GROWTH);
     for (i=0;i<NUM_CHUNKS;i++) {
-      if(!active[i]){
-        if (!mmem_alloc(&memlist[i], CHUNK_SIZE + CHUNK_GROWTH)){
-          printf("mmem_alloc failed\n");
-          goto errorReturn;
-        }else{
-          active[i] = true;
-        }
+      if(!calloc_func(memlist, i)){
+        goto errorReturn;
       }
-        
     }
  
 
 
     /* ...and free it again */
+    #ifdef USE_SEQUENCE
+    uint8_t sequence[NUM_CHUNKS] = FREE_SEQUENCE;
+    for (i = 0; i < NUM_CHUNKS; i++){
+      free_func(memlist, sequence[i]);
+    }
+    #else
     for (i = OFFSET;i<NUM_CHUNKS + OFFSET;i++) {
       j = i % NUM_CHUNKS;
-      if(active[j]){
-        mmem_free(&memlist[j]);
-        active[j] = false;
-      }
-
+      free_func(memlist, j);
     }
+    #endif
 
     cycles += 1;
 
@@ -112,69 +148,13 @@ PROCESS_THREAD(mmem_inorder_tester, ev, data)
  errorReturn:
   printf("Capture error, from %u\n", i - 1);
   for (i = 0;i < NUM_CHUNKS;i++) {
-    if(active[i]){
-      mmem_free(&memlist[i]);
-      active[i] = false;
-    }
+    free_func(memlist, i);
   } 
 
   //PROCESS_PAUSE();
 
   PROCESS_END();
 }
-/*---------------------------------------------------------------------------*/
-PROCESS_THREAD(mmem_revorder_tester, ev, data)
-{
-  uint8_t i;
-  uint8_t j;
-  static struct mmem memlist[NUM_CHUNKS];
-  static bool active[NUM_CHUNKS];
-
-  PROCESS_BEGIN();
-
-  cycles = 0;
-  printf("Starting MMEM reverse order test\n");
-
-  while (1) {
-    printf(" %u ", CHUNK_GROWTH);
-    /* Allocate the memory... */
-    for (i=0;i<NUM_CHUNKS;i++) {
-      if(!active[i]){
-        if (!mmem_alloc(&memlist[i], CHUNK_SIZE + CHUNK_GROWTH)){
-          printf("mmem_alloc failed\n");
-          goto errorReturn;
-        }else{
-          active[i] = true;
-        }
-      }
-    }
-
-    /* ...and free it again - this time in reverse */
-    for (i=NUM_CHUNKS + OFFSET;i > 0 + OFFSET;i--) {
-      j = (i - 1) % NUM_CHUNKS;
-      if(active[j]){
-        mmem_free(&memlist[j]);
-        active[j] = false;
-      }
-
-    }
-    cycles += 1;
-
-    PROCESS_PAUSE();
-  }
-
-errorReturn:
-  printf("Capture error, from %u\n", i - 1);
-  for (i = 0;i < NUM_CHUNKS;i++) {
-    if(active[i]){
-      mmem_free(&memlist[i]);
-      active[i] = false;
-    }
-  } 
-
-  PROCESS_END();
-}
-/*---------------------------------------------------------------------------*/
 
 PROCESS_THREAD(profiler, ev, data)
 {
@@ -182,7 +162,18 @@ PROCESS_THREAD(profiler, ev, data)
 	PROCESS_BEGIN();
 
 	mmem_init();
-  printf("Starting mmem tests: interval: %u offset: %u chunk-growth: %u\n", SECONDS, OFFSET, CHUNK_GROWTH);
+
+  printf("Starting mmem tests: interval: %u offset: %u chunk-growth: %u, sequence: ", SECONDS, OFFSET, CHUNK_GROWTH);
+  #ifdef USE_SEQUENCE
+  printf("{");
+  uint8_t sequence[NUM_CHUNKS] = FREE_SEQUENCE;
+  int i;
+  for(i = 0; i<NUM_CHUNKS;i++){
+    printf("%u, ", sequence[i]);
+  }
+  printf("}");
+  #endif
+  printf("\n");
 
 	process_start(&mmem_inorder_tester, NULL);
 	etimer_set(&timer, CLOCK_SECOND * SECONDS);
@@ -196,13 +187,6 @@ PROCESS_THREAD(profiler, ev, data)
 	PROCESS_WAIT_UNTIL(etimer_expired(&timer));
 	process_exit(&mmem_inorder_tester);
   printf("mmem-inorder: cycles: %u\n", cycles);
-
-  
- 	 process_start(&mmem_revorder_tester, NULL);
-	etimer_set(&timer, CLOCK_SECOND * SECONDS);
-	PROCESS_WAIT_UNTIL(etimer_expired(&timer));
-	process_exit(&mmem_revorder_tester);
-	printf("mmem-revorder: %u\n", cycles);  
 
   printf("End of tests");
 
