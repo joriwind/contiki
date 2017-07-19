@@ -1,17 +1,17 @@
 # The contiki fork for the hecomm 6lowpan network
 
 ## 6LoWPAN network
-Devices:
+**Devices:**
 - [x] network manager (ipv6/rpl-border-router)
 - [ ] IoT node (hecomm/node-cose)
 - [ ] pkt slip radio (...)
 
-Security:
-*Link-layer security:    AES-CCM 128
+**Security:**
+* Link-layer security:    AES-CCM 128
 Standard layer of security in a 6LoWPAN network
-*Network-layer security: None
+* Network-layer security: None
 The idea was to utilise DTLS for end-to-end security in network. However, the Zolertia Z1's storage and memory size is too small.
-*Object security for hecomm: COSE [RFC8152](https://tools.ietf.org/html/rfc8152)
+* Object security for hecomm: COSE [RFC8152](https://tools.ietf.org/html/rfc8152)
 The security in the end-to-end communication between heterogeneous IoT networks (Hecomm system) is based on CBOR object Signing and Encryption (COSE). While the application protocol defined for the Hecomm system is CoAP, COSE is used to secure the payload of the CoAP message.
 
 Paper: ??
