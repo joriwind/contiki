@@ -118,10 +118,11 @@ PROCESS_THREAD(node_cose, ev, data)
 
   SERVER_NODE(&server_ipaddr);
 
-  objsec_init();
   #ifndef USE_MEMB
   mmem_init();
   #endif
+
+  objsec_init();
 
   /* Initialize the REST engine. */
   rest_init_engine();

@@ -10,18 +10,25 @@
 #define PRINTF(...)
 #endif
 
-#define OBJ_SEC_KEYSIZE 25
+#define OBJ_SEC_KEYSIZE 16
 
 
-#define INIT_KEY {0x1, 0x1, 0x1, 0x1, 0x1, \
-                  0x1, 0x1, 0x1, 0x1, 0x1, \
-                  0x1, 0x1, 0x1, 0x1, 0x1, \
-                  0x1, 0x1, 0x1, 0x1, 0x1};
+
+#define INIT_KEY {0x1, 0x1, 0x1, 0x1, \
+                  0x1, 0x1, 0x1, 0x1, \
+                  0x1, 0x1, 0x1, 0x1, \
+                  0x1, 0x1, 0x1, 0x1};
 
 static byte key[OBJ_SEC_KEYSIZE] = INIT_KEY;
+static cn_cbor * algorithm;
 
 void objsec_init(){
     //memcpy(key, INIT_KEY, OBJ_SEC_KEYSIZE);
+    cose_errback err;
+    algorithm = cn_cbor_int_create(COSE_Algorithm_AES_CCM_16_64_128,&context, &err);
+    if(algorithm == NULL){
+      PRINTF("Could not allocate algorithm object: %u\n", err.err);
+    }
 }
 
 void objsec_set_key(uint8_t *k){
@@ -55,6 +62,12 @@ size_t encrypt(uint8_t *buffer, uint16_t bufferSz, const uint8_t *message, size_
     goto errorReturn;
   }
   printf("Setcontent done!\n");
+
+  if(!COSE_Encrypt_map_put_int(objcose, COSE_Header_Algorithm, algorithm, COSE_DONT_SEND, &err)){
+    PRINTF("Error in setting algorithm %i\n", err.err);
+    goto errorReturn;
+  }
+  PRINTF("Algorithm set!\n");
 
   if( !COSE_Encrypt_encrypt(objcose, key, OBJ_SEC_KEYSIZE, &err)){
     PRINTF("Error in encrypt cose: %i\n", err.err);
