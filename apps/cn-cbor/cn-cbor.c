@@ -44,7 +44,7 @@ extern "C" {
 MEMB(cbor_pool, cn_cbor, CBOR_MAX_ELEM);
 #else
 void * cbor_pool;
-#define POOL_SIZE 19
+#define POOL_SIZE 20
 static struct mmem mmem_pool[POOL_SIZE];
 static bool active[POOL_SIZE];
 #endif

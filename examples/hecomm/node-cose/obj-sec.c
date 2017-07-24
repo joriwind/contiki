@@ -41,6 +41,8 @@ size_t encrypt(uint8_t *buffer, uint16_t bufferSz, const uint8_t *message, size_
   //bool COSE_Encrypt_encrypt(HCOSE_ENCRYPT cose, const byte * pbKey, size_t cbKey, cose_errback * perror);
   cose_errback err;
   HCOSE_ENCRYPT objcose;
+  uint8_t temp[1] = {""};
+  size_t temp_len = 0;
   
 
   /* INIT FLAGS
@@ -69,6 +71,13 @@ size_t encrypt(uint8_t *buffer, uint16_t bufferSz, const uint8_t *message, size_
   }
   PRINTF("Algorithm set!\n");
 
+  //Setting AAD
+  if(!COSE_Encrypt_SetExternal(objcose, temp, temp_len, &err)){
+    PRINTF("Error in setting AAD %i\n", err.err);
+    goto errorReturn;
+  }
+  PRINTF("AAD set\n");
+
   if( !COSE_Encrypt_encrypt(objcose, key, OBJ_SEC_KEYSIZE, &err)){
     PRINTF("Error in encrypt cose: %i\n", err.err);
     goto errorReturn;
@@ -77,7 +86,9 @@ size_t encrypt(uint8_t *buffer, uint16_t bufferSz, const uint8_t *message, size_
 
 
   size_t size = COSE_Encode((HCOSE) objcose, buffer, 0, bufferSz);
+  printf("Buffer filled\n");
   COSE_Encrypt_Free(objcose);
+  clear_memory(&context);
   printf("Objcose released!\n");
   return size;
 
@@ -85,6 +96,7 @@ errorReturn:
   if (objcose != NULL) {
     printf("Releasing objcose\n");
     COSE_Encrypt_Free(objcose);
+    clear_memory(&context);
     printf("Objcose released!\n");
   }
   return -1;
