@@ -76,7 +76,7 @@
 #define REST_MAX_CHUNK_SIZE            64//48
 
  /* Amount of concurrent udp connections */
- #define UIP_CONF_UDP_CONNS 4
+ //#define UIP_CONF_UDP_CONNS 4
 
 /* Multiplies with chunk size, be aware of memory constraints. */
 #undef COAP_MAX_OPEN_TRANSACTIONS
@@ -130,5 +130,8 @@
                                             0x01 , 0x23 , 0x45 , 0x67 , \
                                             0x89 , 0xAB , 0xCD , 0xEF }
                                             */
-
+#define NONCORESEC_CONF_KEY { 0x00 , 0x01 , 0x02 , 0x03 , \
+                              0x04 , 0x05 , 0x06 , 0x07 , \
+                              0x08 , 0x09 , 0x0A , 0x0B , \
+                              0x0C , 0x0D , 0x0E , 0x0F }
 #endif /* __PROJECT_ERBIUM_CONF_H__ */
