@@ -102,10 +102,10 @@
 //#define NETSTACK_CONF_FRAMER noncoresec_framer
 
 
-#define HECOMM_ENABLED 0
-#define COSE_ENABLED 0
-#define COAP_ENABLED 0
-#define LLSEC_ENABLED 0
+#define HECOMM_ENABLED 1
+#define COSE_ENABLED 1
+#define COAP_ENABLED 1
+#define LLSEC_ENABLED 1
 
 #ifndef COAP_ENABLED
   #ifdef HECOMM_ENABLED
