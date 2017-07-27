@@ -57,7 +57,7 @@
 #undef LLSEC802154_CONF_ENABLED
 #define LLSEC802154_CONF_ENABLED 1
 #ifndef LLSEC802154_CONF_SECURITY_LEVEL
-#define LLSEC802154_CONF_SECURITY_LEVEL 1
+#define LLSEC802154_CONF_SECURITY_LEVEL 7
 #endif
 
 /*#undef LLSEC802154_CONF_ENABLED
@@ -73,5 +73,8 @@
                                             0x89 , 0xAB , 0xCD , 0xEF , \
                                             0x01 , 0x23 , 0x45 , 0x67 , \
                                             0x89 , 0xAB , 0xCD , 0xEF }*/
-
+#define NONCORESEC_CONF_KEY { 0x00 , 0x01 , 0x02 , 0x03 , \
+                              0x04 , 0x05 , 0x06 , 0x07 , \
+                              0x08 , 0x09 , 0x0A , 0x0B , \
+                              0x0C , 0x0D , 0x0E , 0x0F }
 #endif /* PROJECT_ROUTER_CONF_H_ */

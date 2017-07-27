@@ -8,7 +8,8 @@
 
 **Security:**
 * Link-layer security:    AES-CCM 128\
-Standard layer of security in a 6LoWPAN network
+Standard layer of security in a 6LoWPAN network. The configuration of the mode of security can be found in frame802154.h file. The configuration header LLSEC802154_CONF_SECURITY_LEVEL can be set 0 <-> 7, 0 being no security and 7 encryption and authentication with MIC of 128. Current setting 7: FRAME802154_SECURITY_LEVEL_ENC_MIC_128.
+Source: [Presentation FOSDEM 2017](https://fosdem.org/2017/schedule/event/lowpan_embedded/attachments/slides/1729/export/events/attachments/lowpan_embedded/slides/1729/FOSDEM_2017_linux_wpan.pdf)
 
 * Network-layer security: None \
 The idea was to utilise DTLS for end-to-end security in network. However, the Zolertia Z1's storage and memory size is too small.
