@@ -94,15 +94,17 @@ res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferr
     if(length > REST_MAX_CHUNK_SIZE) {
       length = REST_MAX_CHUNK_SIZE;
     }
-    memcpy(buffer, message, length);
+    //memcpy(buffer, message, length);
   } else {
-    memcpy(buffer, message, length);
+    //memcpy(buffer, message, length);
   } 
 
   
   //key = calloc(128, sizeof(byte));  //All zero?
   //#if 0
-  length = encrypt(buffer,REST_MAX_CHUNK_SIZE, (const uint8_t *) message, length);
+  printf("Encrypting... provided buffer of size: %u\n", preferred_size);
+  length = encrypt(buffer,preferred_size, (const uint8_t *) message, length);
+  printf("Encrypted, copied onto buffer: %u\n", (uint16_t)length);
   if (length > REST_MAX_CHUNK_SIZE){
     printf("Too long!\n");
     length = REST_MAX_CHUNK_SIZE;
@@ -116,9 +118,11 @@ res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferr
     return;
   }
   //#endif
-  
+
   REST.set_header_content_type(response, REST.type.TEXT_PLAIN); /* text/plain is the default, hence this option could be omitted. */
   REST.set_header_etag(response, (uint8_t *)&length, 1);
   REST.set_response_payload(response, buffer, length);
+  printf("Sending message...\n");
+  return;
 }
 
