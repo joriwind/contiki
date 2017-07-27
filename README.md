@@ -3,7 +3,7 @@
 ## 6LoWPAN network
 **Devices:**
 - [x] network manager (ipv6/rpl-border-router)
-- [ ] IoT node (hecomm/node-cose)
+- [x] IoT node (hecomm/node-cose)
 - [ ] pkt slip radio (...)
 
 **Security:**
