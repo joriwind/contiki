@@ -120,7 +120,7 @@ void custom_free_func(void *ptr, void *context){
 void clear_memory(void * context){
   uint8_t i;
 
-  for(i = 0; i < POOL_SIZE; i++){
+  for(i = 1; i < POOL_SIZE; i++){
     if(active[i]){
       mmem_free(&mmem_pool[i]);
       active[i] = false;
