@@ -135,7 +135,7 @@ typedef struct {
 /* option format serialization */
 #define COAP_SERIALIZE_INT_OPTION(number, field, text) \
   if(IS_OPTION(coap_pkt, number)) { \
-    PRINTF(text " [%u]\n", coap_pkt->field); \
+    PRINTF(text " [%u]\n", (uint)coap_pkt->field); \
     option += coap_serialize_int_option(number, current_number, option, coap_pkt->field); \
     current_number = number; \
   }

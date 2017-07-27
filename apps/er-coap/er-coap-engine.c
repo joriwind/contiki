@@ -187,10 +187,12 @@ coap_receive(void)
                       response->code = BAD_OPTION_4_02;
                       coap_set_payload(response, "BlockOutOfScope", 15); /* a const char str[] and sizeof(str) produces larger code size */
                     } else {
+                      PRINTF("Set coap header block 2...\n");
                       coap_set_header_block2(response, block_num,
                                              response->payload_len -
                                              block_offset > block_size,
                                              block_size);
+                      PRINTF("Set coap payload...\n");
                       coap_set_payload(response,
                                        response->payload + block_offset,
                                        MIN(response->payload_len -
@@ -233,6 +235,7 @@ coap_receive(void)
                                                                    transaction->
                                                                    packet)) ==
                  0) {
+                PRINTF("Erbium status error: PACKET_SERIALIZATION_ERROR\n");
                 erbium_status_code = PACKET_SERIALIZATION_ERROR;
               }
             }
@@ -291,6 +294,7 @@ coap_receive(void)
     /* if(parsed correctly) */
     if(erbium_status_code == NO_ERROR) {
       if(transaction) {
+        PRINTF("COAP SEND TRANSACTION\n");
         coap_send_transaction(transaction);
       }
     } else if(erbium_status_code == MANUAL_RESPONSE) {
@@ -310,10 +314,13 @@ coap_receive(void)
         erbium_status_code = INTERNAL_SERVER_ERROR_5_00;
         /* reuse input buffer for error message */
       }
+      PRINTF("Init coap message...\n");
       coap_init_message(message, reply_type, erbium_status_code,
                         message->mid);
+      PRINTF("Setting coap payload...\n");
       coap_set_payload(message, coap_error_message,
                        strlen(coap_error_message));
+      PRINTF("Sending coap message...\n");                       
       coap_send_message(&UIP_IP_BUF->srcipaddr, UIP_UDP_BUF->srcport,
                         uip_appdata, coap_serialize_message(message,
                                                             uip_appdata));

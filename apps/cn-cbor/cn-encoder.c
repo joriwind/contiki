@@ -17,6 +17,14 @@ extern "C" {
 #include "cn-cbor.h"
 #include "cbor.h"
 
+#define DEBUG 0
+#if DEBUG
+#include <stdio.h>
+#define PRINTF(...) printf(__VA_ARGS__)
+#else /* DEBUG */
+#define PRINTF(...)
+#endif /* DEBUG */
+
 #define hton8p(p) (*(uint8_t*)(p))
 #define hton16p(p) (htons(*(uint16_t*)(p)))
 #define hton32p(p) (htonl(*(uint32_t*)(p)))
@@ -36,23 +44,23 @@ typedef struct _write_state
 } cn_write_state;
 
 #define ensure_writable(sz) if ((ws->offset<0) || (ws->offset + (sz) > ws->size)) { \
-  printf("Not ensured sz: %u, ws-o: %u, ws-s: %u\n", sz, ws->offset, ws->size); \
+  PRINTF("Not ensured sz: %u, ws-o: %u, ws-s: %u\n", sz, ws->offset, ws->size); \
   ws->offset = -1; \
   return; \
 } \
 else { \
-  printf("Ensured: sz: %u, ws-o: %u, ws-s: %u\n", sz, ws->offset, ws->size); \
+  PRINTF("Ensured: sz: %u, ws-o: %u, ws-s: %u\n", sz, ws->offset, ws->size); \
 }
 
 #define write_byte_and_data(b, data, sz) \
-printf("Writing byte and data: b: %x, data: %p, sz: %u at %u\n", b, data, sz, ws->offset); \
+PRINTF("Writing byte and data: b: %x, data: %p, sz: %u at %u\n", b, data, sz, ws->offset); \
 ws->buf[ws->offset++] = (b); \
 memcpy(ws->buf+ws->offset, (data), (sz)); \
 ws->offset += sz;
 
 #define write_byte(b) \
 ws->buf[ws->offset++] = (b); \
-printf("Written byte: b: %x at %u \n", ws->buf[ws->offset - 1], ws->offset - 1);
+PRINTF("Written byte: b: %x at %u \n", ws->buf[ws->offset - 1], ws->offset - 1);
 
 #define write_byte_ensured(b) \
 ensure_writable(1); \
@@ -305,7 +313,7 @@ ssize_t cn_cbor_encoder_write(uint8_t *buf,
   cn_write_state ws = { buf, buf_offset, buf_size };
   _visit(cb, _encoder_visitor, _encoder_breaker, &ws);
   if (ws.offset < 0) { 
-    printf("-1 on encoder breaker\n"); 
+    PRINTF("-1 on encoder breaker\n"); 
     return -1; 
     }
   return ws.offset - buf_offset;

@@ -949,7 +949,16 @@ input_packet(void)
       compower_clear(&current_packet);
 #endif /* CONTIKIMAC_CONF_COMPOWER */
 
-      PRINTDEBUG("contikimac: data (%u)\n", packetbuf_datalen());
+      PRINTDEBUG("contikimac: Receivde packet: len: %u, From: ", packetbuf_totlen());
+      PRINTDEBUG(" %02x%02x:%02x%02x:%02x%02x:%02x%02x\n",
+               packetbuf_addr(PACKETBUF_ADDR_SENDER)->u8[0],
+               packetbuf_addr(PACKETBUF_ADDR_SENDER)->u8[1],
+               packetbuf_addr(PACKETBUF_ADDR_SENDER)->u8[2],
+               packetbuf_addr(PACKETBUF_ADDR_SENDER)->u8[3],
+               packetbuf_addr(PACKETBUF_ADDR_SENDER)->u8[4],
+               packetbuf_addr(PACKETBUF_ADDR_SENDER)->u8[5],
+               packetbuf_addr(PACKETBUF_ADDR_SENDER)->u8[6],
+               packetbuf_addr(PACKETBUF_ADDR_SENDER)->u8[7]);
 
 #if CONTIKIMAC_SEND_SW_ACK
       {

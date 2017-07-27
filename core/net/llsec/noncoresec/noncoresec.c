@@ -67,7 +67,7 @@
 
 #define SECURITY_HEADER_LENGTH 5
 
-#define DEBUG 0
+#define DEBUG 1
 #if DEBUG
 #include <stdio.h>
 #define PRINTF(...) printf(__VA_ARGS__)
@@ -139,7 +139,7 @@ input(void)
   PRINTF(", replay ctr %u", anti_replay_get_counter());
   const linkaddr_t *addr;
   addr = packetbuf_addr(PACKETBUF_ADDR_SENDER);
-  PRINTF(", [%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x]", ((uint8_t *)addr)[0], ((uint8_t *)addr)[1], ((uint8_t *)addr)[2], ((uint8_t *)addr)[3], ((uint8_t *)addr)[4], ((uint8_t *)addr)[5], ((uint8_t *)addr)[6], ((uint8_t *)addr)[7], ((uint8_t *)addr)[8], ((uint8_t *)addr)[9], ((uint8_t *)addr)[10], ((uint8_t *)addr)[11], ((uint8_t *)addr)[12], ((uint8_t *)addr)[13], ((uint8_t *)addr)[14], ((uint8_t *)addr)[15]);
+  PRINTF(", [%02x%02x:%02x%02x:%02x%02x:%02x%02x]", ((uint8_t *)addr)[0], ((uint8_t *)addr)[1], ((uint8_t *)addr)[2], ((uint8_t *)addr)[3], ((uint8_t *)addr)[4], ((uint8_t *)addr)[5], ((uint8_t *)addr)[6], ((uint8_t *)addr)[7]);
   //PRINTF(", SENDER: %i %i %i %i %i %i %i %i", sender[0], sender[1], sender[2], sender[3], sender[4], sender[5], sender[6], sender[7]);
   PRINTF("\n");
   
@@ -215,6 +215,7 @@ get_overhead(void)
 static void
 bootstrap(llsec_on_bootstrapped_t on_bootstrapped)
 {
+  PRINTF("noncoresec: bootstrap\n");
   CCM_STAR.set_key(key);
   nbr_table_register(anti_replay_table, NULL);
   on_bootstrapped();
