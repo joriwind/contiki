@@ -10,6 +10,7 @@
 #include <random.h>
 #include <stdio.h>
 #include "ccm-star.h"
+#include "cc2420.h"
 
 static const unsigned short seed = 25647;
 
@@ -106,8 +107,10 @@ bool AES_CCM_Encrypt(COSE_Enveloped * pcose, int TSize, int LSize, const byte * 
 
 	printf("IV/Nonce setup complete\n");
 
+	//Set the key to use
     CHECK_CONDITION(cbKey == 128/8, COSE_ERR_CRYPTO_FAIL);
-    CCM_STAR.set_key(pbKey);
+    set_key1(pbKey);
+	en_key(1);
 	printf("Key set\n");
 
     //Copy over message to result buffer
@@ -122,6 +125,15 @@ bool AES_CCM_Encrypt(COSE_Enveloped * pcose, int TSize, int LSize, const byte * 
 
 	CHECK_CONDITION(_COSE_array_replace(&pcose->m_message, cnTmp, INDEX_BODY, CBOR_CONTEXT_PARAM_COMMA NULL), COSE_ERR_CBOR);
 	cnTmp = NULL;
+
+	#if (LLSEC802154_CONF_ENABLED == 1)
+	//Restore the key of LLSEC!
+	printf("Restore LLSEC key\n");
+	en_key(0);
+	/* uint8_t key[16] = NONCORESEC_CONF_KEY;
+	//uint8_t key[16] = {0,0,0,0 , 0,0,0,0 , 0,0,0,0 , 0,0,0,0};
+	CCM_STAR.set_key(key); */
+	#endif
 
 	return true;
 

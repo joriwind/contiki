@@ -92,4 +92,8 @@ void cc2420_set_cca_threshold(int value);
 
 extern const struct aes_128_driver cc2420_aes_128_driver;
 
+void en_key(uint8_t i);
+void set_key1(uint8_t *key);
+void get_key(uint8_t *key);
+
 #endif /* CC2420_H_ */

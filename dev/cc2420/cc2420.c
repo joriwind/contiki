@@ -83,7 +83,7 @@ enum write_ram_order {
   WRITE_RAM_REVERSE
 };
 
-#define DEBUG 0
+#define DEBUG 1
 #if DEBUG
 #include <stdio.h>
 #define PRINTF(...) printf(__VA_ARGS__)
@@ -495,6 +495,15 @@ init_security(void)
   setreg(CC2420_SECCTRL0, 0);
   setreg(CC2420_SECCTRL1, 0);
 }
+
+void en_key(uint8_t i)
+{
+  if (i == 0){
+    setreg(CC2420_SECCTRL0, CC2420_SECCTRL0_SAKEYSEL0);
+  }else{
+    setreg(CC2420_SECCTRL0, CC2420_SECCTRL0_SAKEYSEL1);
+  }
+}
 /*---------------------------------------------------------------------------*/
 static void
 set_key(uint8_t *key)
@@ -502,6 +511,23 @@ set_key(uint8_t *key)
   GET_LOCK();
   
   write_ram(key, CC2420RAM_KEY0, 16, WRITE_RAM_REVERSE);
+  
+  RELEASE_LOCK();
+}
+
+void set_key1(uint8_t *key){
+  GET_LOCK();
+  
+  write_ram(key, CC2420RAM_KEY1, 16, WRITE_RAM_REVERSE);
+  
+  RELEASE_LOCK();
+}
+
+void get_key(uint8_t *key)  //This function does not seem to work?
+{
+  GET_LOCK();
+  
+  read_ram(key, CC2420RAM_KEY0, 16);
   
   RELEASE_LOCK();
 }
