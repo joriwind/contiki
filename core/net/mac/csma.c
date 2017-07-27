@@ -211,7 +211,7 @@ packet_sent(void *ptr, int status, int num_transmissions)
   int num_tx;
   int backoff_exponent;
   int backoff_transmissions;
-
+  PRINTF("PACKET SENT CSMA..\n");
   n = ptr;
   if(n == NULL) {
     return;
@@ -321,7 +321,7 @@ send_packet(mac_callback_t sent, void *ptr)
   static uint8_t initialized = 0;
   static uint16_t seqno;
   const linkaddr_t *addr = packetbuf_addr(PACKETBUF_ADDR_RECEIVER);
-
+  PRINTF("SEND packet CSMA...\n");
   if(!initialized) {
     initialized = 1;
     /* Initialize the sequence number to a random value as per 802.15.4. */
@@ -383,8 +383,8 @@ send_packet(mac_callback_t sent, void *ptr)
               list_add(n->queued_packet_list, q);
             }
 
-            //PRINTF("csma: send_packet, queue length %d, free packets %d\n",
-            //       list_length(n->queued_packet_list), memb_numfree(&packet_memb));
+            PRINTF("csma: send_packet, queue length %d, free packets %d\n",
+                   list_length(n->queued_packet_list), memb_numfree(&packet_memb));
             /* If q is the first packet in the neighbor's queue, send asap */
             if(list_head(n->queued_packet_list) == q) {
               ctimer_set(&n->transmit_timer, 0, transmit_packet_list, n);
@@ -392,10 +392,10 @@ send_packet(mac_callback_t sent, void *ptr)
             return;
           }
           memb_free(&metadata_memb, q->ptr);
-          //PRINTF("csma: could not allocate queuebuf, dropping packet\n");
+          PRINTF("csma: could not allocate queuebuf, dropping packet\n");
         }
         memb_free(&packet_memb, q);
-        //PRINTF("csma: could not allocate queuebuf, dropping packet\n");
+        PRINTF("csma: could not allocate queuebuf, dropping packet\n");
       }
       /* The packet allocation failed. Remove and free neighbor entry if empty. */
       if(list_length(n->queued_packet_list) == 0) {
@@ -403,12 +403,24 @@ send_packet(mac_callback_t sent, void *ptr)
         memb_free(&neighbor_memb, n);
       }
     } else {
-      //PRINTF("csma: Neighbor queue full\n");
+      PRINTF("csma: Neighbor queue full\n");
     }
-    //PRINTF("csma: could not allocate packet, dropping packet\n");
+    PRINTF("csma: could not allocate packet, dropping packet\n");
   } else {
     PRINTF("csma: could not allocate neighbor, dropping packet\n");
   }
+  PRINTF("Send packet: ");
+  PRINTF("sec level: %i", packetbuf_attr(PACKETBUF_ATTR_SECURITY_LEVEL) );
+  frame802154_frame_counter_t disordered_counter;
+  
+  disordered_counter.u16[0] = packetbuf_attr(PACKETBUF_ATTR_FRAME_COUNTER_BYTES_0_1);
+  disordered_counter.u16[1] = packetbuf_attr(PACKETBUF_ATTR_FRAME_COUNTER_BYTES_2_3);
+  PRINTF(", replay ctr %u\n", LLSEC802154_HTONL(disordered_counter.u32));
+  const linkaddr_t *addrP;
+  addrP = packetbuf_addr(PACKETBUF_ADDR_SENDER);
+  //PRINTF("[:%02x%02x:%02x%02x:%02x%02x:%02x%02x]", ((uint8_t *)addr)[0], ((uint8_t *)addr)[1], ((uint8_t *)addr)[2], ((uint8_t *)addr)[3], ((uint8_t *)addr)[4], ((uint8_t *)addr)[5], ((uint8_t *)addr)[6], ((uint8_t *)addr)[7], ((uint8_t *)addr)[8], ((uint8_t *)addr)[9], ((uint8_t *)addr)[10], ((uint8_t *)addr)[11], ((uint8_t *)addr)[12], ((uint8_t *)addr)[13], ((uint8_t *)addr)[14], ((uint8_t *)addr)[15]);
+  PRINTF(", SENDER: %02x%02x:%02x%02x:%02x%02x:%02x%02x", ((uint8_t *)addrP)[0], ((uint8_t *)addrP)[1], ((uint8_t *)addrP)[2], ((uint8_t *)addrP)[3], ((uint8_t *)addrP)[4], ((uint8_t *)addrP)[5], ((uint8_t *)addrP)[6], ((uint8_t *)addrP)[7]);
+  PRINTF("\n");
   mac_call_sent_callback(sent, ptr, MAC_TX_ERR, 1);
 }
 /*---------------------------------------------------------------------------*/
@@ -422,11 +434,11 @@ input_packet(void)
   disordered_counter.u16[0] = packetbuf_attr(PACKETBUF_ATTR_FRAME_COUNTER_BYTES_0_1);
   disordered_counter.u16[1] = packetbuf_attr(PACKETBUF_ATTR_FRAME_COUNTER_BYTES_2_3);
   
-  PRINTF(", replay ctr %"PRIu32"\n", LLSEC802154_HTONL(disordered_counter.u32));
+  PRINTF(", replay ctr %u\n", LLSEC802154_HTONL(disordered_counter.u32));
   const linkaddr_t *addr;
   addr = packetbuf_addr(PACKETBUF_ADDR_SENDER);
-  PRINTF("[%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x]", ((uint8_t *)addr)[0], ((uint8_t *)addr)[1], ((uint8_t *)addr)[2], ((uint8_t *)addr)[3], ((uint8_t *)addr)[4], ((uint8_t *)addr)[5], ((uint8_t *)addr)[6], ((uint8_t *)addr)[7], ((uint8_t *)addr)[8], ((uint8_t *)addr)[9], ((uint8_t *)addr)[10], ((uint8_t *)addr)[11], ((uint8_t *)addr)[12], ((uint8_t *)addr)[13], ((uint8_t *)addr)[14], ((uint8_t *)addr)[15]);
-  //PRINTF(", SENDER: %i %i %i %i %i %i %i %i", sender[0], sender[1], sender[2], sender[3], sender[4], sender[5], sender[6], sender[7]);
+  //PRINTF("[:%02x%02x:%02x%02x:%02x%02x:%02x%02x]", ((uint8_t *)addr)[0], ((uint8_t *)addr)[1], ((uint8_t *)addr)[2], ((uint8_t *)addr)[3], ((uint8_t *)addr)[4], ((uint8_t *)addr)[5], ((uint8_t *)addr)[6], ((uint8_t *)addr)[7], ((uint8_t *)addr)[8], ((uint8_t *)addr)[9], ((uint8_t *)addr)[10], ((uint8_t *)addr)[11], ((uint8_t *)addr)[12], ((uint8_t *)addr)[13], ((uint8_t *)addr)[14], ((uint8_t *)addr)[15]);
+  PRINTF(", SENDER: %02x%02x:%02x%02x:%02x%02x:%02x%02x", ((uint8_t *)addr)[0], ((uint8_t *)addr)[1], ((uint8_t *)addr)[2], ((uint8_t *)addr)[3], ((uint8_t *)addr)[4], ((uint8_t *)addr)[5], ((uint8_t *)addr)[6], ((uint8_t *)addr)[7]);
   PRINTF("\n");
   NETSTACK_LLSEC.input();
 }
