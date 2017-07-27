@@ -1,0 +1,35 @@
+New measurement: LLSEC7_COSEC
+Thu Jul 27 11:26:51 UTC 2017
+   text	   data	    bss	    dec	    hex	filename
+  64635	    556	   6316	  71507	  11753	node-cose.z1
+
+New measurement: COSEC
+Thu Jul 27 11:27:38 UTC 2017
+   text	   data	    bss	    dec	    hex	filename
+  63377	    530	   6322	  70229	  11255	node-cose.z1
+
+New measurement: COSE_CONF_ENABLED
+Thu Jul 27 11:33:46 UTC 2017
+   text	   data	    bss	    dec	    hex	filename
+  63377	    530	   6322	  70229	  11255	node-cose.z1
+
+New measurement: NONE_ONLY_COAP
+Thu Jul 27 11:34:23 UTC 2017
+   text	   data	    bss	    dec	    hex	filename
+  53725	    448	   5462	  59635	   e8f3	node-cose.z1
+
+New measurement: LLSEC7
+Thu Jul 27 11:35:26 UTC 2017
+   text	   data	    bss	    dec	    hex	filename
+  56783	    474	   5632	  62889	   f5a9	node-cose.z1
+
+New measurement: LLSEC7_NO_COAP
+Thu Jul 27 11:49:19 UTC 2017
+   text	   data	    bss	    dec	    hex	filename
+  42481	    342	   5012	  47835	   badb	node-cose.z1
+
+New measurement: ONLY_CONTIKI
+Thu Jul 27 11:51:27 UTC 2017
+   text	   data	    bss	    dec	    hex	filename
+  39423	    316	   4842	  44581	   ae25	node-cose.z1
+
