@@ -15,7 +15,7 @@ Source: [Presentation FOSDEM 2017](https://fosdem.org/2017/schedule/event/lowpan
 The idea was to utilise DTLS for end-to-end security in network. However, the Zolertia Z1's storage and memory size is too small.
 
 * Object security for hecomm: COSE [RFC8152](https://tools.ietf.org/html/rfc8152)\
-The security in the end-to-end communication between heterogeneous IoT networks (Hecomm system) is based on CBOR object Signing and Encryption (COSE). While the application protocol defined for the Hecomm system is CoAP, COSE is used to secure the payload of the CoAP message.
+The security in the end-to-end communication between heterogeneous IoT networks (Hecomm system) is based on CBOR object Signing and Encryption (COSE). While the application protocol defined for the Hecomm system is CoAP, COSE is used to secure the payload of the CoAP message. The cose implementation is from [cose-c](https://github.com/cose-wg/COSE-C) which uses [cn-cbor](https://github.com/cabo/cn-cbor) and normally OpenSSL or MBEDSSL. Only Encrypt part of the COSE-c implementation is used and a couple of memory fixes where done to COSE-c and cn-cbor. Both COSE-c and cn-cbor implementation use the same [MMEM memory stack](https://github.com/contiki-os/contiki/wiki/Memory-allocation) to store the required elements, MMEM size of 370 bytes was used. The crypto library was replaced with the CCM* implementation of Contiki and the AES accelerator of CC2420 chip on the zolertia z1 node.
 
 Paper: ??
 
@@ -40,7 +40,7 @@ For more information, see the Contiki website:
 
 [http://contiki-os.org](http://contiki-os.org)
 
-# LLSEC security in Contiki
+## LLSEC security in Contiki
 You need the following Contiki build options
 configured in your project-conf.h to make use of
 LLSEC with network wide key:
@@ -55,3 +55,8 @@ LLSEC with network wide key:
                                 0x0C, 0x0D, 0x0E, 0x0F }
 ```
 
+## Changing the size of the MMEM stack
+In the project-conf.h file the size of the MMEM stack can be configured to your needs. The standard size is 4kB which is often too large for a zoleratia Z1 node.
+```c
+#define   MMEM_CONF_SIZE  370
+```
