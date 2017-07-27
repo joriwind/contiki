@@ -49,7 +49,8 @@
  */
 
  /* Memory management */
-#define   MMEM_CONF_SIZE  512
+//#define   MMEM_CONF_SIZE  512
+#define   MMEM_CONF_SIZE  370
 
 
  #define NETSTACK_CONF_WITH_IPV6 1

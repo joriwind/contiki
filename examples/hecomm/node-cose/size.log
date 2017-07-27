@@ -33,3 +33,13 @@ Thu Jul 27 11:51:27 UTC 2017
    text	   data	    bss	    dec	    hex	filename
   39423	    316	   4842	  44581	   ae25	node-cose.z1
 
+New measurement: COSE_COAP_LLSEC_REDUCED-MMEM
+Thu Jul 27 13:17:14 UTC 2017
+   text	   data	    bss	    dec	    hex	filename
+  64635	    556	   6174	  71365	  116c5	node-cose.z1
+
+New measurement: COSE_COAP_REDUCED-MMEM
+Thu Jul 27 13:18:10 UTC 2017
+   text	   data	    bss	    dec	    hex	filename
+  63377	    530	   6180	  70087	  111c7	node-cose.z1
+
