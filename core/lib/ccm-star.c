@@ -42,6 +42,20 @@
 #include "lib/aes-128.h"
 #include <string.h>
 
+#include "cc2420.h"
+
+#define DEBUG 1
+#if DEBUG
+#include <stdio.h>
+#define PRINTF(...) printf(__VA_ARGS__)
+#define PRINTLARGEHEX(array, len, i) for(i = 0;i < len; i++){ \
+  PRINTF("%x", array[i]);\
+}
+#else /* DEBUG */
+#define PRINTF(...)
+#define PRINTLARGEHEX(array, len) 
+#endif /* DEBUG */
+
 /* see RFC 3610 */
 #define CCM_STAR_AUTH_FLAGS(Adata, M) ((Adata ? (1u << 6) : 0) | (((M - 2u) >> 1) << 3) | 1u)
 #define CCM_STAR_ENCRYPTION_FLAGS     1
@@ -91,7 +105,23 @@ mic(const uint8_t *m,  uint8_t m_len,
   uint8_t x[AES_128_BLOCK_SIZE];
   uint8_t pos;
   uint8_t i;
-  
+
+
+  PRINTF("CCM mic: m: ");
+  uint8_t v = 0;
+  PRINTLARGEHEX(m, m_len,v);
+  PRINTF(", len: %u, nonce: ", m_len);
+  PRINTLARGEHEX(nonce, 4,v);
+  PRINTF(", a: ");
+  PRINTLARGEHEX(a, a_len,v);
+  PRINTF(", len: %u, mic_len: %u\n", a_len, mic_len);
+  PRINTF("\n");
+  PRINTF("Key: ");
+  uint8_t key[16];
+  get_key(key);
+  PRINTLARGEHEX(key, 16, v);
+  PRINTF("\n");
+
   set_nonce(x, CCM_STAR_AUTH_FLAGS(a_len, mic_len), nonce, m_len);
   AES_128.encrypt(x);
   
@@ -128,6 +158,10 @@ mic(const uint8_t *m,  uint8_t m_len,
   ctr_step(nonce, 0, x, AES_128_BLOCK_SIZE, 0);
   
   memcpy(result, x, mic_len);
+
+  PRINTF("MIC: ");
+  PRINTLARGEHEX(result, mic_len, v);
+  PRINTF("\n");
 }
 /*---------------------------------------------------------------------------*/
 static void
@@ -135,7 +169,13 @@ ctr(uint8_t *m, uint8_t m_len, const uint8_t* nonce)
 {
   uint8_t pos;
   uint8_t counter;
-  
+
+  PRINTF("CCM ctr: message: ");
+  uint8_t v;
+  PRINTLARGEHEX(m, m_len,v);
+  PRINTF(", len: %u, nonce: ", m_len);
+  PRINTLARGEHEX(nonce, 4,v);
+  PRINTF("\n");
   pos = 0;
   counter = 1;
   while(pos < m_len) {
@@ -145,6 +185,14 @@ ctr(uint8_t *m, uint8_t m_len, const uint8_t* nonce)
 }
 /*---------------------------------------------------------------------------*/
 static void set_key(const uint8_t *key) {
+    #if DEBUG
+    PRINTF("New Key: ");
+    uint8_t i;
+    for (i = 0; i< 16; i++){
+      PRINTF("%x", key[i]);
+    }
+    PRINTF("\n");
+    #endif
     AES_128.set_key((uint8_t*)key);
 }
 /*---------------------------------------------------------------------------*/
