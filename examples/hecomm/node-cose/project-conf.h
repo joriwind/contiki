@@ -100,14 +100,40 @@
 
 //#undef NETSTACK_CONF_FRAMER
 //#define NETSTACK_CONF_FRAMER noncoresec_framer
-#undef NETSTACK_CONF_LLSEC
-#define NETSTACK_CONF_LLSEC noncoresec_driver
 
-#undef LLSEC802154_CONF_ENABLED
-#define LLSEC802154_CONF_ENABLED 1
-#ifndef LLSEC802154_CONF_SECURITY_LEVEL
-#define LLSEC802154_CONF_SECURITY_LEVEL 7
+
+#define HECOMM_ENABLED 0
+#define COSE_ENABLED 0
+#define COAP_ENABLED 0
+#define LLSEC_ENABLED 0
+
+#ifndef COAP_ENABLED
+  #ifdef HECOMM_ENABLED
+    #error No hecomm without coap
+  #else
+    #ifdef COSE_ENABLED
+      #error No cose without HECOMM
+    #endif
+  #endif
+#else
+  #ifndef HECOMM_ENABLED
+    #ifdef COSE_ENABLED
+      #error No cose without HECOMM
+    #endif
+  #endif
 #endif
+
+#if LLSEC_ENABLED
+  #undef NETSTACK_CONF_LLSEC
+  #define NETSTACK_CONF_LLSEC noncoresec_driver
+
+  #undef LLSEC802154_CONF_ENABLED
+  #define LLSEC802154_CONF_ENABLED 1
+  #ifndef LLSEC802154_CONF_SECURITY_LEVEL
+  #define LLSEC802154_CONF_SECURITY_LEVEL 7
+  #endif 
+#endif
+
 
 /*#undef AES_128_CONF
 #define AES_128_CONF aes_128_driver*/

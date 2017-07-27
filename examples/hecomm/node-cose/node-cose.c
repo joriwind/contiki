@@ -41,14 +41,18 @@
 #include <string.h>
 #include "contiki.h"
 #include "contiki-net.h"
-#include "rest-engine.h"
-#include "er-coap-engine.h"
-#include "obj-sec.h"
+#if COAP_ENABLED
+  #include "rest-engine.h"
+  #include "er-coap-engine.h"
+#endif
+#if COSE_ENABLED
+  #include "obj-sec.h"
+  #ifndef USE_MEMB
+    #include "mmem.h"
+  #endif
+#endif
 #include "dev/button-sensor.h"
 
-#ifndef USE_MEMB
-#include "mmem.h"
-#endif
 
 #define DEBUG 1
 #if DEBUG
@@ -74,7 +78,13 @@
 #define LOCAL_PORT      UIP_HTONS(COAP_DEFAULT_PORT + 1)
 #define REMOTE_PORT     UIP_HTONS(COAP_DEFAULT_PORT)
 
-extern resource_t res_hello, res_os_hello, res_os_key, res_compartner;
+#if COAP_ENABLED
+  #if HECOMM_ENABLED
+    extern resource_t res_hello, res_os_hello, res_os_key, res_compartner;
+  #else
+    extern resource_t res_hello, res_compartner;
+  #endif
+#endif
 
 
 /*uint8_t sender_id[] =  { 0x73, 0x65, 0x72, 0x76, 0x65, 0x72 };
@@ -93,47 +103,55 @@ AUTOSTART_PROCESSES(&node_cose);
 
 uip_ipaddr_t server_ipaddr;
 
+#if COAP_ENABLED
+  /* Example URIs that can be queried. */
+  #define NUMBER_OF_URLS 3
+  /* leading and ending slashes only for demo purposes, get cropped automatically when setting the Uri-Path */
+  char *service_urls[NUMBER_OF_URLS] =
+  { ".well-known/core", "/hello", "/req" };
 
-/* Example URIs that can be queried. */
-#define NUMBER_OF_URLS 3
-/* leading and ending slashes only for demo purposes, get cropped automatically when setting the Uri-Path */
-char *service_urls[NUMBER_OF_URLS] =
-{ ".well-known/core", "/hello", "/req" };
+  /* This function is will be passed to COAP_BLOCKING_REQUEST() to handle responses. */
+  void
+  client_chunk_handler(void *response)
+  {
+    const uint8_t *chunk;
 
-/* This function is will be passed to COAP_BLOCKING_REQUEST() to handle responses. */
-void
-client_chunk_handler(void *response)
-{
-  const uint8_t *chunk;
+    int len = coap_get_payload(response, &chunk);
 
-  int len = coap_get_payload(response, &chunk);
+    printf("|%.*s", len, (char *)chunk);
+  }
+#endif
 
-  printf("|%.*s", len, (char *)chunk);
-}
 PROCESS_THREAD(node_cose, ev, data)
 {
   PROCESS_BEGIN();
 
+#if COAP_ENABLED
   static coap_packet_t request[1];      /* This way the packet can be treated as pointer as usual. */
 
   SERVER_NODE(&server_ipaddr);
 
-  #ifndef USE_MEMB
-  mmem_init();
+  #if COSE_ENABLED
+    #ifndef USE_MEMB
+     mmem_init();
+    #endif
+
+    objsec_init();
   #endif
+#endif
 
-  objsec_init();
-
+#if COAP_ENABLED
   /* Initialize the REST engine. */
   rest_init_engine();
   rest_activate_resource(&res_hello, "test/hello");
+  #if HECOMM_ENABLED
   rest_activate_resource(&res_os_hello, "test/os-hello");
   rest_activate_resource(&res_os_key, "hecomm/osskey");
+  #endif
   rest_activate_resource(&res_compartner, "hecomm/commpartner");
 
   /* receives all CoAP messages */
   coap_init_engine();
-
 
 #if PLATFORM_HAS_BUTTON
   SENSORS_ACTIVATE(button_sensor);
@@ -142,7 +160,6 @@ PROCESS_THREAD(node_cose, ev, data)
 
   while(1) {
     PROCESS_WAIT_EVENT();
-
 #if PLATFORM_HAS_BUTTON
      if(ev == sensors_event && data == &button_sensor) {
 
@@ -164,6 +181,7 @@ PROCESS_THREAD(node_cose, ev, data)
     }
 #endif
   }
+#endif
 
   PROCESS_END();
 }
