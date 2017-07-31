@@ -34,6 +34,16 @@
 
 #include <string.h>
 
+#define DEBUG 0
+#if DEBUG
+#include <stdio.h>
+#define PRINTF(...) printf(__VA_ARGS__)
+#define PRINT_SOCKET(c) printf("UDP socket: ptr: %p, p: %p, udp_conn: %p, callback: %p\n", c->ptr, c->p, c->udp_conn, c->input_callback)
+#else
+#define PRINTF(...)
+#define PRINT_SOCKET(c)
+#endif
+
 PROCESS(udp_socket_process, "UDP socket process");
 
 static uint8_t buf[UIP_BUFSIZE];
@@ -155,6 +165,7 @@ PROCESS_THREAD(udp_socket_process, ev, data)
   while(1) {
     PROCESS_WAIT_EVENT();
     if(ev == tcpip_event) {
+      PRINTF("udp-socket: tcpip_event triggered\n");
 
       /* An appstate pointer is passed to use from the IP stack
          through the 'data' pointer. We registered this appstate when
@@ -173,6 +184,7 @@ PROCESS_THREAD(udp_socket_process, ev, data)
           /* Copy the data from the uIP data buffer into our own
              buffer to avoid the uIP buffer being messed with by the
              callee. */
+          PRINTF("udp-socket: copying over data: size %u\n", uip_datalen());
           memcpy(buf, uip_appdata, uip_datalen());
 
           /* Call the client process. We use the PROCESS_CONTEXT
@@ -180,6 +192,8 @@ PROCESS_THREAD(udp_socket_process, ev, data)
              client process. */
           if(c->input_callback != NULL) {
             PROCESS_CONTEXT_BEGIN(c->p);
+            PRINT_SOCKET(c);
+            PRINTF("udp-socket: sending to callback: data size %u\n", uip_datalen());
             c->input_callback(c, c->ptr,
                               &(UIP_IP_BUF->srcipaddr),
                               UIP_HTONS(UIP_IP_BUF->srcport),
