@@ -44,7 +44,7 @@
 
 #include "cc2420.h"
 
-#define DEBUG 1
+#define DEBUG 0
 #if DEBUG
 #include <stdio.h>
 #define PRINTF(...) printf(__VA_ARGS__)
@@ -53,7 +53,7 @@
 }
 #else /* DEBUG */
 #define PRINTF(...)
-#define PRINTLARGEHEX(array, len) 
+#define PRINTLARGEHEX(array, len, i) 
 #endif /* DEBUG */
 
 /* see RFC 3610 */
