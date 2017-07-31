@@ -34,6 +34,9 @@
 #include "net/rpl/rpl.h"
 
 #include "net/netstack.h"
+
+#include "net/ip/udp-socket.h"
+
 #include "dev/button-sensor.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -45,12 +48,8 @@
 #if DEBUG
 #include <stdio.h>
 #define PRINTF(...) printf(__VA_ARGS__)
-#define PRINT6ADDR(addr) PRINTF("[%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x]", ((uint8_t *)addr)[0], ((uint8_t *)addr)[1], ((uint8_t *)addr)[2], ((uint8_t *)addr)[3], ((uint8_t *)addr)[4], ((uint8_t *)addr)[5], ((uint8_t *)addr)[6], ((uint8_t *)addr)[7], ((uint8_t *)addr)[8], ((uint8_t *)addr)[9], ((uint8_t *)addr)[10], ((uint8_t *)addr)[11], ((uint8_t *)addr)[12], ((uint8_t *)addr)[13], ((uint8_t *)addr)[14], ((uint8_t *)addr)[15])
-#define PRINTLLADDR(lladdr) PRINTF("[%02x:%02x:%02x:%02x:%02x:%02x]", (lladdr)->addr[0], (lladdr)->addr[1], (lladdr)->addr[2], (lladdr)->addr[3], (lladdr)->addr[4], (lladdr)->addr[5])
 #else
 #define PRINTF(...)
-#define PRINT6ADDR(addr)
-#define PRINTLLADDR(addr)
 #endif
 #define UIP_IP_BUF   ((struct uip_ip_hdr *)&uip_buf[UIP_LLH_LEN])
 
@@ -62,6 +61,7 @@
 #define SERVER_REPLY 1
 
 static struct uip_udp_conn *server_conn;
+static struct udp_socket udp_listener;
 
 PROCESS(udp_server_process, "UDP server process");
 AUTOSTART_PROCESSES(&udp_server_process);
@@ -106,11 +106,18 @@ print_local_addresses(void)
     }
   }
 }
+
+static void udp_socket_callback(struct udp_socket *c, void *ptr, const uip_ipaddr_t *source_addr,
+                                             uint16_t source_port,
+                                             const uip_ipaddr_t *dest_addr,
+                                             uint16_t dest_port,
+                                             const uint8_t *data,
+                                             uint16_t datalen){
+  PRINTF("UDP SOCKET CALLBACK\n");
+}
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(udp_server_process, ev, data)
 {
-  uip_ipaddr_t ipaddr;
-  struct uip_ds6_addr *root_if;
 
   PROCESS_BEGIN();
 
@@ -123,30 +130,27 @@ PROCESS_THREAD(udp_server_process, ev, data)
   
   print_local_addresses();
 
-  /* The data sink runs with a 100% duty cycle in order to ensure high 
-     packet reception rates. */
-  //NETSTACK_MAC.off(1);
-  //NETSTACK_RDC.off(1);
+  if(!udp_socket_register(&udp_listener, NULL, udp_socket_callback)){
+    PRINTF("Unable to register UDP Socket\n");
+    return -1;
+  }
 
-  /* server_conn = udp_new(NULL, UIP_HTONS(UDP_CLIENT_PORT), NULL);
-  if(server_conn == NULL) {
-    PRINTF("No UDP connection available, exiting the process!\n");
-    PROCESS_EXIT();
-  } */
-  udp_bind(server_conn, UIP_HTONS(UDP_SERVER_PORT));
+  if(!udp_socket_bind(&udp_listener, 5683)){
+    PRINTF("Unable to bind UDP socket to port: %u\n", 5683);
+    return -1;
+  }
 
-  PRINTF("Created a server connection with remote address ");
-  PRINT6ADDR(&server_conn->ripaddr);
-  PRINTF(" local/remote port %u/%u\n", UIP_HTONS(server_conn->lport),
-         UIP_HTONS(server_conn->rport));
+  PRINTF("UDP SOCKET IS INITIALISED!\n");
+
 
   while(1) {
-    PROCESS_YIELD();
-    //PROCESS_WAIT_EVENT();
+    //PROCESS_YIELD();
+    PROCESS_WAIT_EVENT();
+    PRINTF("Wait ended!\n");
     PRINTF("Event: %u", (uint16_t)ev);
     if(ev == tcpip_event) {
       PRINTF("TCPIP EVENT\n");
-      tcpip_handler();
+      /* tcpip_handler(); */
     } else if (ev == sensors_event && data == &button_sensor) {
       PRINTF("Initiaing global repair\n");
       rpl_repair_root(RPL_DEFAULT_INSTANCE);
