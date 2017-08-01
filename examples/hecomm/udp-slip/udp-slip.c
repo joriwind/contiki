@@ -36,6 +36,7 @@
 #include "net/netstack.h"
 
 #include "net/ip/udp-socket.h"
+#include "slip-net.h"
 
 #include "dev/button-sensor.h"
 #include <stdio.h>
@@ -53,93 +54,51 @@
 #endif
 #define UIP_IP_BUF   ((struct uip_ip_hdr *)&uip_buf[UIP_LLH_LEN])
 
-#define UDP_CLIENT_PORT	8765
-#define UDP_SERVER_PORT	5678
+#define UDP_LISTEN_PORT	5683
+#define UDP_REMOTE_PORT 5683
 
-#define UDP_EXAMPLE_ID  190
 
-#define SERVER_REPLY 1
-
-static struct uip_udp_conn *server_conn;
 static struct udp_socket udp_listener;
+
 
 PROCESS(udp_server_process, "UDP server process");
 AUTOSTART_PROCESSES(&udp_server_process);
-/*---------------------------------------------------------------------------*/
-static void
-tcpip_handler(void)
-{
-  char *appdata;
 
-  if(uip_newdata()) {
-    appdata = (char *)uip_appdata;
-    appdata[uip_datalen()] = 0;
-    PRINTF("DATA recv '%s' from ", appdata);
-    PRINTF("%d",
-           UIP_IP_BUF->srcipaddr.u8[sizeof(UIP_IP_BUF->srcipaddr.u8) - 1]);
-    PRINTF("\n");
-#if SERVER_REPLY
-    PRINTF("DATA sending reply\n");
-    uip_ipaddr_copy(&server_conn->ripaddr, &UIP_IP_BUF->srcipaddr);
-    uip_udp_packet_send(server_conn, "Reply", sizeof("Reply"));
-    uip_create_unspecified(&server_conn->ripaddr);
-#endif
-  }
-}
-/*---------------------------------------------------------------------------*/
-static void
-print_local_addresses(void)
-{
-  int i;
-  uint8_t state;
 
-  PRINTF("Server IPv6 addresses: ");
-  for(i = 0; i < UIP_DS6_ADDR_NB; i++) {
-    state = uip_ds6_if.addr_list[i].state;
-    if(state == ADDR_TENTATIVE || state == ADDR_PREFERRED) {
-      PRINT6ADDR(&uip_ds6_if.addr_list[i].ipaddr);
-      PRINTF("\n");
-      /* hack to make address "final" */
-      if (state == ADDR_TENTATIVE) {
-	uip_ds6_if.addr_list[i].state = ADDR_PREFERRED;
-      }
-    }
-  }
-}
 
-static void udp_socket_callback(struct udp_socket *c, void *ptr, const uip_ipaddr_t *source_addr,
+void udp_socket_callback(struct udp_socket *c, void *ptr, const uip_ipaddr_t *source_addr,
                                              uint16_t source_port,
                                              const uip_ipaddr_t *dest_addr,
                                              uint16_t dest_port,
                                              const uint8_t *data,
                                              uint16_t datalen){
   PRINTF("UDP SOCKET CALLBACK\n");
+  //We have a packet that needs to be send via slipnet/serial communication
+  slipnet_input();
 }
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(udp_server_process, ev, data)
 {
 
   PROCESS_BEGIN();
-
   PROCESS_PAUSE();
-
   SENSORS_ACTIVATE(button_sensor);
-
-  PRINTF("UDP server started\n");
-
   
-  print_local_addresses();
+  PRINTF("udp-slip started\n");
+  
+  //Start serial communication
+  slipnet_init();
 
+  //Setup udp socket listener
   if(!udp_socket_register(&udp_listener, NULL, udp_socket_callback)){
     PRINTF("Unable to register UDP Socket\n");
     return -1;
   }
 
-  if(!udp_socket_bind(&udp_listener, 5683)){
-    PRINTF("Unable to bind UDP socket to port: %u\n", 5683);
+  if(!udp_socket_bind(&udp_listener, UDP_LISTEN_PORT)){
+    PRINTF("Unable to bind UDP socket to port: %u\n", UDP_LISTEN_PORT);
     return -1;
   }
-
   PRINTF("UDP SOCKET IS INITIALISED!\n");
 
 

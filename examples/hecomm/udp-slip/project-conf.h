@@ -36,4 +36,9 @@
                               0x0C , 0x0D , 0x0E , 0x0F }
 
 
+/*SLIP CONFIGURARTION*/
+#define CMD_CONF_OUTPUT slip_radio_cmd_output
+#define CMD_CONF_HANDLERS slip_radio_cmd_handler
+
+
 #endif //PROJECT_CONF_H_

@@ -14,6 +14,8 @@ ifdef PERIOD
 CFLAGS+=-DPERIOD=$(PERIOD)
 endif
 
+APPS+=slip-cmd
+PROJECT_SOURCEFILES += slip-net.c
 
 CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\"
 
