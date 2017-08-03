@@ -21,3 +21,15 @@ CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\"
 
 CONTIKI_WITH_IPV6 = 1
 include $(CONTIKI)/Makefile.include
+
+
+ifeq ($(PREFIX),)
+ PREFIX = aaaa::3/64
+endif
+
+
+$(CONTIKI)/tools/tunslip6:	$(CONTIKI)/tools/tunslip6.c
+	(cd $(CONTIKI)/tools && $(MAKE) tunslip6)
+
+connect-slip:	$(CONTIKI)/tools/tunslip6
+	$(CONTIKI)/tools/tunslip6 -s /dev/ttyUSB1 -T $(PREFIX)
