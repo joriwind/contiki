@@ -11,4 +11,8 @@ void slipnet_input(void);
 
 void slipnet_init();
 
+void slipnet_output(void);
+
+void slipnet_request_prefix(void);
+
 #endif

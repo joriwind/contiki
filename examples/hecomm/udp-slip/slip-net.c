@@ -1,17 +1,16 @@
 #include "contiki.h"
-#include "net/netstack.h"
+#include "contiki-lib.h"
+#include "contiki-net.h"
 #include "net/ip/uip.h"
-#include "net/packetbuf.h"
+#include "net/ipv6/uip-ds6.h"
 #include "dev/slip.h"
-#include "cmd.h"
-#include "packetutils.h"
-
-#define SLIP_END     0300
-#define SLIP_ESC     0333
-#define SLIP_ESC_END 0334
-#define SLIP_ESC_ESC 0335
+#include "dev/uart1.h"
+#include <string.h>
+#include "net/rpl/rpl.h"
+#include "net/netstack.h"
 
 #define DEBUG 1
+#include "net/ip/uip-debug.h"
 #if DEBUG
 #include <stdio.h>
 #define PRINTF(...) printf(__VA_ARGS__)
@@ -19,163 +18,131 @@
 #define PRINTF(...)
 #endif
 
+#define UIP_IP_BUF        ((struct uip_ip_hdr *)&uip_buf[UIP_LLH_LEN])
 
-/*---------------------------------------------------------------------------*/
-void
-slip_send_packet(const uint8_t *ptr, int len)
-{
-  uint16_t i;
-  uint8_t c;
+static uip_ipaddr_t last_sender;
 
-  slip_arch_writeb(SLIP_END);
-  for(i = 0; i < len; ++i) {
-    c = *ptr++;
-    if(c == SLIP_END) {
-      slip_arch_writeb(SLIP_ESC);
-      c = SLIP_ESC_END;
-    } else if(c == SLIP_ESC) {
-      slip_arch_writeb(SLIP_ESC);
-      c = SLIP_ESC_ESC;
-    }
-    slip_arch_writeb(c);
-  }
-  slip_arch_writeb(SLIP_END);
-}
-/*---------------------------------------------------------------------------*/
-void
-slipnet_input(void)
-{
-  int i;
-  /* radio should be configured for filtering so this should be simple */
-  /* this should be sent over SLIP! */
-  /* so just copy into uip-but and send!!! */
-  /* Format: !R<data> ? */
-  uip_len = packetbuf_datalen();
-  i = packetbuf_copyto(uip_buf);
+static uip_ipaddr_t prefix;
+static uint8_t prefix_set;
 
-  if(DEBUG) {
-    printf("Slipnet got input of len: %d, copied: %d\n",
-	   packetbuf_datalen(), i);
-
-    for(i = 0; i < uip_len; i++) {
-      printf("%02x", (unsigned char) uip_buf[i]);
-      if((i & 15) == 15) printf("\n");
-      else if((i & 7) == 7) printf(" ");
-    }
-    printf("\n");
-  }
-
-  /* printf("SUT: %u\n", uip_len); */
-  slip_send_packet(uip_buf, uip_len);
-}
-
-
-static int slip_radio_cmd_handler(const uint8_t *data, int len);
-static void slip_input_callback(void);
-
-CMD_HANDLERS(slip_radio_cmd_handler);
- /* max 16 packets at the same time??? */
-uint8_t packet_ids[16];
-int packet_pos = 0;
-
-static void
-packet_sent(void *ptr, int status, int transmissions)
-{
-  uint8_t buf[20];
-  uint8_t sid;
-  int pos;
-  sid = *((uint8_t *)ptr);
-  PRINTF("Slip-radio: packet sent! sid: %d, status: %d, tx: %d\n",
-  	 sid, status, transmissions);
-  /* packet callback from lower layers */
-  /*  neighbor_info_packet_sent(status, transmissions); */
-  pos = 0;
-  buf[pos++] = '!';
-  buf[pos++] = 'R';
-  buf[pos++] = sid;
-  buf[pos++] = status; /* one byte ? */
-  buf[pos++] = transmissions;
-  cmd_send(buf, pos);
-}
-
-static int
-slip_radio_cmd_handler(const uint8_t *data, int len)
-{
-  int i;
-  if(data[0] == '!') {
-    /* should send out stuff to the radio - ignore it as IP */
-    /* --- s e n d --- */
-    if(data[1] == 'S') {
-      int pos;
-      packet_ids[packet_pos] = data[2];
-
-      packetbuf_clear();
-      pos = packetutils_deserialize_atts(&data[3], len - 3);
-      if(pos < 0) {
-        PRINTF("slip-radio: illegal packet attributes\n");
-        return 1;
-      }
-      pos += 3;
-      len -= pos;
-      if(len > PACKETBUF_SIZE) {
-        len = PACKETBUF_SIZE;
-      }
-      memcpy(packetbuf_dataptr(), &data[pos], len);
-      packetbuf_set_datalen(len);
-
-      PRINTF("slip-radio: sending %u (%d bytes)\n",
-             data[2], packetbuf_datalen());
-
-      /* parse frame before sending to get addresses, etc. */
-      //framer_802154.parse();
-      NETSTACK_FRAMER.parse();
-      NETSTACK_LLSEC.send(packet_sent, &packet_ids[packet_pos]);
-
-      packet_pos++;
-      if(packet_pos >= sizeof(packet_ids)) {
-	packet_pos = 0;
-      }
-
-      return 1;
-    }
-  } else if(uip_buf[0] == '?') {
-    PRINTF("Got request message of type %c\n", uip_buf[1]);
-    if(data[1] == 'M') {
-      /* this is just a test so far... just to see if it works */
-      uip_buf[0] = '!';
-      uip_buf[1] = 'M';
-      for(i = 0; i < 8; i++) {
-        uip_buf[2 + i] = uip_lladdr.addr[i];
-      }
-      uip_len = 10;
-      cmd_send(uip_buf, uip_len);
-      return 1;
-    }
-  }
-  return 0;
-}
-
-void slipnet_init(){
-  #ifndef BAUD2UBR
-#define BAUD2UBR(baud) baud
-#endif
-  slip_arch_init(BAUD2UBR(115200));
-  process_start(&slip_process, NULL);
-  slip_set_input_callback(slip_input_callback);
-  packet_pos = 0;
-}
+void set_prefix_64(uip_ipaddr_t *);
 
 static void
 slip_input_callback(void)
 {
-  PRINTF("SR-SIN: %u '%c%c'\n", uip_len, uip_buf[0], uip_buf[1]);
-  cmd_input(uip_buf, uip_len);
-  uip_len = 0;
+ // PRINTF("SIN: %u\n", uip_len);
+  if(uip_buf[0] == '!') {
+    PRINTF("Got configuration message of type %c\n", uip_buf[1]);
+    uip_len = 0;
+    if(uip_buf[1] == 'P') {
+      uip_ipaddr_t prefix;
+      /* Here we set a prefix !!! */
+      memset(&prefix, 0, 16);
+      memcpy(&prefix, &uip_buf[2], 8);
+      PRINTF("Setting prefix ");
+      PRINT6ADDR(&prefix);
+      PRINTF("\n");
+      set_prefix_64(&prefix);
+    }
+  } else if (uip_buf[0] == '?') {
+    PRINTF("Got request message of type %c\n", uip_buf[1]);
+    if(uip_buf[1] == 'M') {
+      char* hexchar = "0123456789abcdef";
+      int j;
+      /* this is just a test so far... just to see if it works */
+      uip_buf[0] = '!';
+      for(j = 0; j < 8; j++) {
+        uip_buf[2 + j * 2] = hexchar[uip_lladdr.addr[j] >> 4];
+        uip_buf[3 + j * 2] = hexchar[uip_lladdr.addr[j] & 15];
+      }
+      uip_len = 18;
+      slip_send();
+      
+    }
+    uip_len = 0;
+  }
+  /* Save the last sender received over SLIP to avoid bouncing the
+     packet back if no route is found */
+  uip_ipaddr_copy(&last_sender, &UIP_IP_BUF->srcipaddr);
 }
+
+void slipnet_init()
+{
+  slip_arch_init(BAUD2UBR(115200));
+  process_start(&slip_process, NULL);
+  slip_set_input_callback(slip_input_callback);
+}
+
+void slipnet_output(void)
+{
+  if(uip_ipaddr_cmp(&last_sender, &UIP_IP_BUF->srcipaddr)) {
+    /* Do not bounce packets back over SLIP if the packet was received
+       over SLIP */
+    PRINTF("slip-bridge: Destination off-link but no route src=");
+    PRINT6ADDR(&UIP_IP_BUF->srcipaddr);
+    PRINTF(" dst=");
+    PRINT6ADDR(&UIP_IP_BUF->destipaddr);
+    PRINTF("\n");
+  } else {
+ //   PRINTF("SUT: %u\n", uip_len);
+    slip_send();
+  }
+}
+
+#if !SLIP_BRIDGE_CONF_NO_PUTCHAR
+#undef putchar
+int
+putchar(int c)
+{
+#define SLIP_END     0300
+  static char debug_frame = 0;
+
+  if(!debug_frame) {            /* Start of debug output */
+    slip_arch_writeb(SLIP_END);
+    slip_arch_writeb('\r');     /* Type debug line == '\r' */
+    debug_frame = 1;
+  }
+
+  /* Need to also print '\n' because for example COOJA will not show
+     any output before line end */
+  slip_arch_writeb((char)c);
+
+  /*
+   * Line buffered output, a newline marks the end of debug output and
+   * implicitly flushes debug output.
+   */
+  if(c == '\n') {
+    slip_arch_writeb(SLIP_END);
+    debug_frame = 0;
+  }
+  return c;
+}
+#endif
 
 void
-slip_radio_cmd_output(const uint8_t *data, int data_len)
+set_prefix_64(uip_ipaddr_t *prefix_64)
 {
-  slip_send_packet(data, data_len);
+  rpl_dag_t *dag;
+  uip_ipaddr_t ipaddr;
+  memcpy(&prefix, prefix_64, 16);
+  memcpy(&ipaddr, prefix_64, 16);
+  prefix_set = 1;
+  uip_ds6_set_addr_iid(&ipaddr, &uip_lladdr);
+  uip_ds6_addr_add(&ipaddr, 0, ADDR_AUTOCONF);
+
+  dag = rpl_set_root(RPL_DEFAULT_INSTANCE, &ipaddr);
+  if(dag != NULL) {
+    rpl_set_prefix(dag, &prefix, 64);
+    PRINTF("created a new RPL dag\n");
+  }
 }
 
+void slipnet_request_prefix(void)
+{
+  /* mess up uip_buf with a dirty request... */
+  uip_buf[0] = '?';
+  uip_buf[1] = 'P';
+  uip_len = 2;
+  slip_send();
+  uip_len = 0;
+}

@@ -73,8 +73,12 @@ void udp_socket_callback(struct udp_socket *c, void *ptr, const uip_ipaddr_t *so
                                              const uint8_t *data,
                                              uint16_t datalen){
   PRINTF("UDP SOCKET CALLBACK\n");
+  PRINTF("Message: %s\n", data);
   //We have a packet that needs to be send via slipnet/serial communication
-  slipnet_input();
+  uip_len += UIP_IPUDPH_LEN;
+  PRINTF("UIP: len: %u\n, command: %x\n",uip_len, uip_buf[1] );
+
+  slipnet_output();
 }
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(udp_server_process, ev, data)
@@ -101,6 +105,8 @@ PROCESS_THREAD(udp_server_process, ev, data)
   }
   PRINTF("UDP SOCKET IS INITIALISED!\n");
 
+
+    //slipnet_request_prefix();
 
   while(1) {
     //PROCESS_YIELD();
