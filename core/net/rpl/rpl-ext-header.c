@@ -50,7 +50,7 @@
 #include "net/rpl/rpl-private.h"
 #include "net/packetbuf.h"
 
-#define DEBUG DEBUG_NONE
+#define DEBUG 1
 #include "net/ip/uip-debug.h"
 
 #include <limits.h>
@@ -232,6 +232,19 @@ rpl_update_header_empty(void)
   case UIP_EXT_HDR_OPT_RPL:
     PRINTF("RPL: Updating RPL option\n");
     UIP_EXT_HDR_OPT_RPL_BUF->senderrank = UIP_HTONS(instance->current_dag->rank);
+
+#ifdef CONF_DIRTY_REDIRECT_HACK
+      #ifndef CONF_REDIRECT_ADDRESS
+        #error "Redirect address is not defined!"
+      #endif
+      uip_ipaddr_t reIpAddr;
+        uip_ip6addr(&reIpAddr,0xbbbb, 0,0,0,0,0,0,6);
+      if(uip_ip6addr_cmp(&UIP_IP_BUF->destipaddr, &reIpAddr)){
+        //Do dirty hack to rpl header
+        UIP_EXT_HDR_OPT_RPL_BUF->flags ^= RPL_HDR_OPT_DOWN;
+        PRINTF("DIRTY HACK TO RPL HEADER\n");
+      }
+#endif
 
     /* Check the direction of the down flag, as per Section 11.2.2.3,
        which states that if a packet is going down it should in

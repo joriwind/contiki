@@ -49,8 +49,14 @@
 
 #include <string.h>
 
-#define DEBUG DEBUG_NONE
+#define DEBUG 1
 #include "net/ip/uip-debug.h"
+#if DEBUG
+#include <stdio.h>
+#define PRINTF(...) printf(__VA_ARGS__)
+#else
+#define PRINTF(...)
+#endif
 
 #if UIP_LOGGING
 #include <stdio.h>
@@ -528,6 +534,25 @@ eventhandler(process_event_t ev, process_data_t data)
 void
 tcpip_input(void)
 {
+#ifdef CONF_DIRTY_REDIRECT_HACK
+      #ifndef CONF_REDIRECT_ADDRESS
+        #error "Redirect address is not defined!"
+      #endif
+      if(uip_ds6_is_my_addr(&UIP_IP_BUF->destipaddr)){
+        //uip_ipaddr_t reIpAddr = uip_ip6addr(&fogIpAddr,CONF_REDIRECT_ADDRESS[0],CONF_REDIRECT_ADDRESS[1],CONF_REDIRECT_ADDRESS[2],CONF_REDIRECT_ADDRESS[3],CONF_REDIRECT_ADDRESS[4],CONF_REDIRECT_ADDRESS[5],CONF_REDIRECT_ADDRESS[6],CONF_REDIRECT_ADDRESS[7]);
+        //Change destination IP address
+        uip_ipaddr_t reIpAddr;
+        uip_ip6addr(&reIpAddr,0xbbbb, 0,0,0,0,0,0,6);
+        uip_ipaddr_copy(&UIP_IP_BUF->destipaddr, &reIpAddr);
+        //Do dirty hack to rpl header
+        //UIP_EXT_HDR_OPT_RPL_BUF->flags ^= RPL_HDR_OPT_DOWN;
+
+        PRINT6ADDR(&UIP_IP_BUF->destipaddr);
+        PRINTF(": CHANGED\n");
+        /* tcpip_ipv6_output();
+        return; */
+      }
+#endif
   process_post_synch(&tcpip_process, PACKET_INPUT, NULL);
   uip_len = 0;
 #if NETSTACK_CONF_WITH_IPV6
@@ -557,26 +582,64 @@ tcpip_ipv6_output(void)
     uip_len = 0;
     return;
   }
+  PRINTF("STEP 0\n");
 
   if(!uip_is_addr_mcast(&UIP_IP_BUF->destipaddr)) {
     /* Next hop determination */
     nbr = NULL;
-
+    PRINT6ADDR(&UIP_IP_BUF->destipaddr);
+    PRINTF("STEP 1\n");
     /* We first check if the destination address is on our immediate
        link. If so, we simply use the destination address as our
        nexthop address. */
+       uip_ipaddr_t reIpAddr;
+        uip_ip6addr(&reIpAddr,0xbbbb, 0,0,0,0,0,0,6);
+    /* if(uip_ip6addr_cmp(&UIP_IP_BUF->destipaddr, &reIpAddr)){
+#ifdef UIP_FALLBACK_INTERFACE
+	  PRINTF("FALLBACK: removing ext hdrs & setting proto %d %d\n", 
+		 uip_ext_len, *((uint8_t *)UIP_IP_BUF + 40));
+	  if(uip_ext_len > 0) {
+	    extern void remove_ext_hdr(void);
+	    uint8_t proto = *((uint8_t *)UIP_IP_BUF + 40);
+	    remove_ext_hdr();
+	    // This should be copied from the ext header... 
+	    UIP_IP_BUF->proto = proto;
+	  }
+	  UIP_FALLBACK_INTERFACE.output();
+#else
+          PRINTF("tcpip_ipv6_output: Destination off-link but no route\n");
+#endif // !UIP_FALLBACK_INTERFACE 
+    } */
     if(uip_ds6_is_addr_onlink(&UIP_IP_BUF->destipaddr)){
       nexthop = &UIP_IP_BUF->destipaddr;
+      PRINT6ADDR(&UIP_IP_BUF->destipaddr);
+      PRINTF("STEP 1.5 nooooo\n");
+
     } else {
+      PRINTF("STEP 2\n");
       uip_ds6_route_t *route;
       /* Check if we have a route to the destination address. */
       route = uip_ds6_route_lookup(&UIP_IP_BUF->destipaddr);
 
       /* No route was found - we send to the default route instead. */
       if(route == NULL) {
+        PRINTF("STEP 3\n");
         PRINTF("tcpip_ipv6_output: no route found, using default route\n");
         nexthop = uip_ds6_defrt_choose();
+#ifdef CONF_DIRTY_REDIRECT_HACK
+  #ifndef CONF_REDIRECT_ADDRESS
+    #error "Redirect address is not defined!"
+  #endif
+      uip_ipaddr_t reIpAddr;
+        uip_ip6addr(&reIpAddr,0xbbbb, 0,0,0,0,0,0,6);
+      if(uip_ip6addr_cmp(&UIP_IP_BUF->destipaddr, &reIpAddr)){
+        //Do dirty hack to rpl header
+        nexthop = NULL;
+        PRINTF("DIRTY HACK TO dfrt_choose\n");
+      }
+#endif
         if(nexthop == NULL) {
+          PRINTF("STEP 4\n");
 #ifdef UIP_FALLBACK_INTERFACE
 	  PRINTF("FALLBACK: removing ext hdrs & setting proto %d %d\n", 
 		 uip_ext_len, *((uint8_t *)UIP_IP_BUF + 40));
@@ -724,6 +787,7 @@ tcpip_ipv6_output(void)
     }
     return;
   }
+  PRINTF("NOOOO");
   /* Multicast IP destination address. */
   tcpip_output(NULL);
   uip_len = 0;
