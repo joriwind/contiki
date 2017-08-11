@@ -24,7 +24,7 @@ include $(CONTIKI)/Makefile.include
 
 
 ifeq ($(PREFIX),)
- PREFIX = aaaa::3/64
+ PREFIX = bbbb::1/64
 endif
 
 
@@ -32,4 +32,4 @@ $(CONTIKI)/tools/tunslip6:	$(CONTIKI)/tools/tunslip6.c
 	(cd $(CONTIKI)/tools && $(MAKE) tunslip6)
 
 connect-slip:	$(CONTIKI)/tools/tunslip6
-	$(CONTIKI)/tools/tunslip6 -s /dev/ttyUSB1 -T $(PREFIX)
+	$(CONTIKI)/tools/tunslip6 -s /dev/ttyUSB1 -T -v6 $(PREFIX)
