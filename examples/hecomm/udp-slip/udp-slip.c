@@ -94,11 +94,13 @@ void event_handler(){
   if(uip_newdata()) {
     //Received part
     appdata = (char *)uip_appdata;
-    //appdata[uip_datalen()] = 0;
-    //PRINTF("DATA recv '%s' \n", appdata);
+    appdata[uip_datalen()] = 0;
+    PRINTF("DATA recv '%s' \n", appdata);
 
     //Instead of sending IP packet send only UDP payload!!
-    slipnet_send_data((uint8_t *)appdata, uip_datalen());
+    uip_len += UIP_IPUDPH_LEN;
+    slipnet_output();
+    //slipnet_send_data((uint8_t *)appdata, uip_datalen());
 
     //Replying part
     PRINTF("DATA sending reply\n");
