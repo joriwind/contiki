@@ -84,3 +84,7 @@ export PATH=/opt/mspgccx/bin/:$PATH
 
 ## Checking the website of 6LoWPAN gateway
 [http://[aaaa::c30c:0:0:a]/](http://[aaaa::c30c:0:0:a]/)
+
+# Information
+
+[Packet buffer](http://anrg.usc.edu/contiki/index.php/Packetbuffer_Basics)
