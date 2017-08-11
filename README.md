@@ -4,7 +4,7 @@
 **Devices:**
 - [x] network manager (ipv6/rpl-border-router)
 - [x] IoT node (hecomm/node-cose)
-- [ ] pkt slip radio (...)
+- [x] pkt slip radio (...)
 
 **Security:**
 * Link-layer security:    AES-CCM 128\
@@ -18,6 +18,11 @@ The idea was to utilise DTLS for end-to-end security in network. However, the Zo
 The security in the end-to-end communication between heterogeneous IoT networks (Hecomm system) is based on CBOR object Signing and Encryption (COSE). While the application protocol defined for the Hecomm system is CoAP, COSE is used to secure the payload of the CoAP message. The cose implementation is from [cose-c](https://github.com/cose-wg/COSE-C) which uses [cn-cbor](https://github.com/cabo/cn-cbor) and normally OpenSSL or MBEDSSL. Only Encrypt part of the COSE-c implementation is used and a couple of memory fixes where done to COSE-c and cn-cbor. Both COSE-c and cn-cbor implementation use the same [MMEM memory stack](https://github.com/contiki-os/contiki/wiki/Memory-allocation) to store the required elements, MMEM size of 370 bytes was used. The crypto library was replaced with the CCM* implementation of Contiki and the AES accelerator of CC2420 chip on the zolertia z1 node.
 
 Paper: ??
+
+## SLIP communication
+In the hecomm system, the fog redirects packets. However the fog is defined to be part of the IoT network itself. Therefore the fog has its own 6LoWPAN node that can receive UDP packets(CoAP messages) from nodes actively participating in hecomm communication. This fog node (hecomm/udp-slip) works by receiving UDP packets and by uploading the payload of the UDP messages via SLIP protocol over USB. 
+
+Two type of messages are send over SLIP. If the message starts with a '\r' character, the message contains debugging information, e.g. printf's. If no apparent character is used at the start of the message, UDP payload is send.
 
 
 The Contiki Operating System
