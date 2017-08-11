@@ -15,4 +15,8 @@ void slipnet_output(void);
 
 void slipnet_request_prefix(void);
 
+void slipnet_send_data(uint8_t *data, uint16_t len);
+
+const struct uip_fallback_interface rpl_interface;
+
 #endif

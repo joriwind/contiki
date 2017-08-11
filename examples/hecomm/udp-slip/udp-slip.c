@@ -56,9 +56,14 @@
 
 #define UDP_LISTEN_PORT	5683
 #define UDP_REMOTE_PORT 5683
+#define FOG_INTERNAL_ADDRESS_CONF {0xaaaa, 0, 0, 0, 0, 0x00ff, 0xfe00, 1}
+#define FOG_INTERNAL_PORT 5683
 
 
-static struct udp_socket udp_listener;
+static struct udp_socket udp_listener, udp_send;
+static struct uip_udp_conn *udpconn;
+  uip_ipaddr_t fogIpAddr;
+
 
 
 PROCESS(udp_server_process, "UDP server process");
@@ -73,13 +78,39 @@ void udp_socket_callback(struct udp_socket *c, void *ptr, const uip_ipaddr_t *so
                                              const uint8_t *data,
                                              uint16_t datalen){
   PRINTF("UDP SOCKET CALLBACK\n");
-  PRINTF("Message: %s\n", data);
+  PRINTF("Message: %s, len: %u\n", data, datalen);
   //We have a packet that needs to be send via slipnet/serial communication
-  uip_len += UIP_IPUDPH_LEN;
-  PRINTF("UIP: len: %u\n, command: %x\n",uip_len, uip_buf[1] );
 
-  slipnet_output();
+  if(!udp_socket_send(&udp_send, data, datalen)){
+    PRINTF("Unable to send to FOG INTERNAL\n");
+  }else{
+    PRINTF("SEND data to fog\n");
+  }
 }
+
+void event_handler(){
+  char *appdata;
+
+  if(uip_newdata()) {
+    //Received part
+    appdata = (char *)uip_appdata;
+    //appdata[uip_datalen()] = 0;
+    //PRINTF("DATA recv '%s' \n", appdata);
+
+    //Instead of sending IP packet send only UDP payload!!
+    slipnet_send_data((uint8_t *)appdata, uip_datalen());
+
+    //Replying part
+    PRINTF("DATA sending reply\n");
+    //uip_ipaddr_copy(&udpconn->ripaddr, &UIP_IP_BUF->srcipaddr);
+    //Packet was send to me, now sending to fog
+    //uip_ipaddr_copy(&udpconn->ripaddr, &fogIpAddr);
+    //tcpip_input();
+     //uip_udp_packet_send(udpconn, "Reply", sizeof("Reply"));
+    //uip_create_unspecified(&udpconn->ripaddr); 
+  }
+}
+
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(udp_server_process, ev, data)
 {
@@ -90,11 +121,12 @@ PROCESS_THREAD(udp_server_process, ev, data)
   
   PRINTF("udp-slip started\n");
   
-  //Start serial communication
-  slipnet_init();
+  //NETSTACK_MAC.off(1);
+  /*  //Start serial communication
+  slipnet_init(); */
 
   //Setup udp socket listener
-  if(!udp_socket_register(&udp_listener, NULL, udp_socket_callback)){
+  /* if(!udp_socket_register(&udp_listener, NULL, udp_socket_callback)){
     PRINTF("Unable to register UDP Socket\n");
     return -1;
   }
@@ -102,8 +134,25 @@ PROCESS_THREAD(udp_server_process, ev, data)
   if(!udp_socket_bind(&udp_listener, UDP_LISTEN_PORT)){
     PRINTF("Unable to bind UDP socket to port: %u\n", UDP_LISTEN_PORT);
     return -1;
+  } */
+
+  udpconn = udp_new(NULL, UIP_HTONS(0), NULL); 
+ 
+  udp_bind(udpconn, UIP_HTONS(UDP_LISTEN_PORT));
+  PRINTF("UDP LISTEN IS INITIALISED!\n"); 
+
+
+  uip_ip6addr(&fogIpAddr,0xff, 0,0,0,0,0,0,6);
+
+  
+
+
+  if(!udp_socket_connect(&udp_send, &fogIpAddr, FOG_INTERNAL_PORT)){
+    PRINTF("Unable to connect FOG INTERNAL udp socket\n");
+    return -1;
   }
-  PRINTF("UDP SOCKET IS INITIALISED!\n");
+
+
 
 
     //slipnet_request_prefix();
@@ -116,6 +165,7 @@ PROCESS_THREAD(udp_server_process, ev, data)
     if(ev == tcpip_event) {
       PRINTF("TCPIP EVENT\n");
       /* tcpip_handler(); */
+      event_handler();
     } else if (ev == sensors_event && data == &button_sensor) {
       PRINTF("Initiaing global repair\n");
       rpl_repair_root(RPL_DEFAULT_INSTANCE);

@@ -5,6 +5,16 @@
 
  #define NETSTACK_CONF_WITH_IPV6 1
 
+#ifndef UIP_FALLBACK_INTERFACE
+#define UIP_FALLBACK_INTERFACE rpl_interface
+#endif
+
+/* Not sending the IP packet because of reasons...
+ * - Could not get the raw IP packet in the wireshark, tried: IP redirect in tcpip/6lowpan/rpl; using fallback in different places...
+ * Therefore going for more direct solution, not using the tunslip6 tool --> SEND the UDP payload directly to program over slip instead of IP packet
+*/
+/* #define CONF_DIRTY_REDIRECT_HACK 1
+#define CONF_REDIRECT_ADDRESS {0xaaaa, 0, 0, 0, 0, 0, 0, 6} */
 
 /* Disabling TCP on CoAP nodes. */
 #undef UIP_CONF_TCP

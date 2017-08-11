@@ -25,6 +25,12 @@ static uip_ipaddr_t last_sender;
 static uip_ipaddr_t prefix;
 static uint8_t prefix_set;
 
+#define SLIP_END     0300
+#define SLIP_ESC     0333
+#define SLIP_ESC_END 0334
+#define SLIP_ESC_ESC 0335
+
+
 void set_prefix_64(uip_ipaddr_t *);
 
 static void
@@ -71,6 +77,14 @@ void slipnet_init()
   slip_arch_init(BAUD2UBR(115200));
   process_start(&slip_process, NULL);
   slip_set_input_callback(slip_input_callback);
+
+
+  /* Here we set a prefix !!! */
+  uip_ip6addr(&prefix,0xbbbb, 0,0,0,0,0,0,1);
+  PRINTF("Setting prefix ");
+  PRINT6ADDR(&prefix);
+  PRINTF("\n");
+  set_prefix_64(&prefix);
 }
 
 void slipnet_output(void)
@@ -84,7 +98,16 @@ void slipnet_output(void)
     PRINT6ADDR(&UIP_IP_BUF->destipaddr);
     PRINTF("\n");
   } else {
- //   PRINTF("SUT: %u\n", uip_len);
+    PRINTF("SUT: %u\n", uip_len);
+#ifdef CONF_DIRTY_REDIRECT_HACK
+    uint8_t fixedHdr[4] = {0x60, 0x00, 0x00, 0x00};//, 0x00, 0x1e, 0x11
+    uint8_t *ptr;
+    uint8_t i;
+    ptr = &uip_buf[UIP_LLH_LEN];
+
+    for(i = 0; i<sizeof(fixedHdr) ; i++)
+      ptr[i] = fixedHdr[i];
+#endif
     slip_send();
   }
 }
@@ -105,7 +128,14 @@ putchar(int c)
 
   /* Need to also print '\n' because for example COOJA will not show
      any output before line end */
-  slip_arch_writeb((char)c);
+    if(c == SLIP_END) {
+      slip_arch_writeb(SLIP_ESC);
+      c = SLIP_ESC_END;
+    } else if(c == SLIP_ESC) {
+      slip_arch_writeb(SLIP_ESC);
+      c = SLIP_ESC_ESC;
+    }
+    slip_arch_writeb(c);
 
   /*
    * Line buffered output, a newline marks the end of debug output and
@@ -130,11 +160,11 @@ set_prefix_64(uip_ipaddr_t *prefix_64)
   uip_ds6_set_addr_iid(&ipaddr, &uip_lladdr);
   uip_ds6_addr_add(&ipaddr, 0, ADDR_AUTOCONF);
 
-  dag = rpl_set_root(RPL_DEFAULT_INSTANCE, &ipaddr);
+  /* dag = rpl_set_root(RPL_DEFAULT_INSTANCE, &ipaddr);
   if(dag != NULL) {
     rpl_set_prefix(dag, &prefix, 64);
     PRINTF("created a new RPL dag\n");
-  }
+  } */
 }
 
 void slipnet_request_prefix(void)
@@ -145,4 +175,41 @@ void slipnet_request_prefix(void)
   uip_len = 2;
   slip_send();
   uip_len = 0;
+}
+
+const struct uip_fallback_interface rpl_interface = {
+  slipnet_init, slipnet_output
+};
+
+/*
+ *  Used to send data directly using slip protocol.
+ *  Sending: SLIP_END -> DATA -> SLIP_END
+ */
+void slipnet_send_data(uint8_t *data, uint16_t len){
+  
+  PRINTF("Sending data over SLIP\n");
+    PRINTF("SUT: %u\n", uip_len);
+  uint8_t i;
+  uint8_t c;
+  //Start byte
+  slip_arch_writeb(SLIP_END);
+
+  //Send all the data
+  for(i = 0; i < len; i++){
+    //slip_arch_writeb((char)data[i]);
+    c = data[i];
+    if(c == SLIP_END) {
+      slip_arch_writeb(SLIP_ESC);
+      c = SLIP_ESC_END;
+    } else if(c == SLIP_ESC) {
+      slip_arch_writeb(SLIP_ESC);
+      c = SLIP_ESC_ESC;
+    }
+    slip_arch_writeb(c);
+  }
+
+  
+
+  //End byte
+  slip_arch_writeb(SLIP_END);
 }
