@@ -45,6 +45,7 @@ extern uint16_t uip_slen;
 #include "net/ipv6/multicast/uip-mcast6.h"
 
 #include <string.h>
+#include <stdio.h>
 
 /*---------------------------------------------------------------------------*/
 void
@@ -54,6 +55,7 @@ uip_udp_packet_send(struct uip_udp_conn *c, const void *data, int len)
   if(data != NULL) {
     uip_udp_conn = c;
     uip_slen = len;
+    printf("Sending data of size: %u\n", uip_slen);
     memcpy(&uip_buf[UIP_LLH_LEN + UIP_IPUDPH_LEN], data,
            len > UIP_BUFSIZE - UIP_LLH_LEN - UIP_IPUDPH_LEN?
            UIP_BUFSIZE - UIP_LLH_LEN - UIP_IPUDPH_LEN: len);
@@ -65,8 +67,9 @@ uip_udp_packet_send(struct uip_udp_conn *c, const void *data, int len)
     UIP_MCAST6.out();
   }
 #endif /* UIP_IPV6_MULTICAST */
-
+  printf("Do I reach this?\n");
 #if NETSTACK_CONF_WITH_IPV6
+    printf("Send UDP packet to tcpip\n");
     tcpip_ipv6_output();
 #else
     if(uip_len > 0) {
