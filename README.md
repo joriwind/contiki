@@ -65,3 +65,22 @@ In the project-conf.h file the size of the MMEM stack can be configured to your 
 ```c
 #define   MMEM_CONF_SIZE  370
 ```
+
+# Practical usage
+## Sending one UDP packet via gateway
+```c
+echo "hello" | nc -6u -q1 aaaa::c30c:0:0:7 5683
+```
+
+## Opening docker image for e.g. setting up gateway
+```bash
+docker run -it --net=host --privileged -v $(pwd):/shared/ contikibuild-12 /bin/bash
+```
+### Use higher version of msp430
+Using the bash of docker image:
+```bash
+export PATH=/opt/mspgccx/bin/:$PATH
+``` 
+
+## Checking the website of 6LoWPAN gateway
+[http://[aaaa::c30c:0:0:a]/](http://[aaaa::c30c:0:0:a]/)
