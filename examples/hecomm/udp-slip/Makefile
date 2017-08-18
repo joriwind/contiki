@@ -32,4 +32,4 @@ $(CONTIKI)/tools/tunslip6:	$(CONTIKI)/tools/tunslip6.c
 	(cd $(CONTIKI)/tools && $(MAKE) tunslip6)
 
 connect-slip:	$(CONTIKI)/tools/tunslip6
-	$(CONTIKI)/tools/tunslip6 -s /dev/ttyUSB1 -T -v6 $(PREFIX)
+	$(CONTIKI)/tools/tunslip6 -s /dev/ttyUSB1 -T -v2 $(PREFIX)
