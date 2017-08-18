@@ -97,7 +97,8 @@ void event_handler(){
     appdata[uip_datalen()] = 0;
     PRINTF("DATA recv '%s' \n", appdata);
 
-    //Instead of sending IP packet send only UDP payload!!
+    //Add the headers back on the menu...
+    //I assume the udp headers are still present in uip_buf 
     uip_len += UIP_IPUDPH_LEN;
     slipnet_output();
     //slipnet_send_data((uint8_t *)appdata, uip_datalen());
