@@ -70,9 +70,15 @@
 #define DEBUG 0
 #if DEBUG
 #include <stdio.h>
+uint8_t i;
 #define PRINTF(...) printf(__VA_ARGS__)
+#define PRINTBUF(buffer, begin, end)  printf("Buffer:{"); for (i = begin; i < end; i++){ \
+  printf(" %x", buffer[i]);  \
+} \
+printf("}\n");
 #else /* DEBUG */
 #define PRINTF(...)
+#define PRINTBUF(...)
 #endif /* DEBUG */
 
 /* network-wide CCM* key */
@@ -114,6 +120,7 @@ on_frame_created(void)
 {
   uint8_t *dataptr = packetbuf_dataptr();
   uint8_t data_len = packetbuf_datalen();
+  PRINTBUF(dataptr, 0, data_len);
 
   ccm_star_mic_packetbuf(get_extended_address(&linkaddr_node_addr), dataptr + data_len, LLSEC802154_MIC_LENGTH);
 #if WITH_ENCRYPTION

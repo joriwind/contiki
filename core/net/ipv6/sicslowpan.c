@@ -71,7 +71,7 @@
 
 #include <stdio.h>
 
-#define DEBUG DEBUG_NONE
+#define DEBUG 0
 #include "net/ip/uip-debug.h"
 #if DEBUG
 /* PRINTFI and PRINTFO are defined for input and output to debug one without changing the timing of the other */
@@ -82,12 +82,18 @@ uint8_t p;
 #define PRINTPACKETBUF() PRINTF("packetbuf buffer: "); for(p = 0; p < packetbuf_datalen(); p++){PRINTF("%.2X", *(packetbuf_ptr + p));} PRINTF("\n")
 #define PRINTUIPBUF() PRINTF("UIP buffer: "); for(p = 0; p < uip_len; p++){PRINTF("%.2X", uip_buf[p]);}PRINTF("\n")
 #define PRINTSICSLOWPANBUF() PRINTF("SICSLOWPAN buffer: "); for(p = 0; p < sicslowpan_len; p++){PRINTF("%.2X", sicslowpan_buf[p]);}PRINTF("\n")
+uint8_t i;
+#define PRINTBUF(buffer, begin, end)  printf("Buffer:{"); for (i = begin; i < end; i++){ \
+                                        printf(" %x", buffer[i]);  \
+                                      } \
+                                      printf("}\n");
 #else
 #define PRINTFI(...)
 #define PRINTFO(...)
 #define PRINTPACKETBUF()
 #define PRINTUIPBUF()
 #define PRINTSICSLOWPANBUF()
+#define PRINTBUF(...)
 #endif /* DEBUG == 1*/
 
 #if UIP_LOGGING
@@ -1567,7 +1573,12 @@ output(const uip_lladdr_t *localdest)
      */
     memcpy(packetbuf_ptr + packetbuf_hdr_len, (uint8_t *)UIP_IP_BUF + uncomp_hdr_len,
            uip_len - uncomp_hdr_len);
+    PRINTF("Uncomp_hdr_len: %u, uip_len: %u\n", uncomp_hdr_len, uip_len);
+  char *data;
+  data = (char *)packetbuf_ptr + packetbuf_hdr_len;
+  PRINTBUF(data, 0, uip_len - uncomp_hdr_len);
     packetbuf_set_datalen(uip_len - uncomp_hdr_len + packetbuf_hdr_len);
+    PRINTF("Datalen: %u\n", packetbuf_datalen());
     send_packet(&dest);
   }
   return 1;
