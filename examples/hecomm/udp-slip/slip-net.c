@@ -14,8 +14,13 @@
 #if DEBUG
 #include <stdio.h>
 #define PRINTF(...) printf(__VA_ARGS__)
+#define PRINTBUF(buffer, begin, end)  printf("Buffer:{"); for (i = begin; i < end; i++){ \
+                                        printf(" %x", buffer[i]);  \
+                                      } \
+                                      printf("}\n");
 #else
 #define PRINTF(...)
+#define PRINTBUF(...)
 #endif
 
 #define UIP_IP_BUF        ((struct uip_ip_hdr *)&uip_buf[UIP_LLH_LEN])
@@ -66,7 +71,22 @@ slip_input_callback(void)
       
     }
     uip_len = 0;
+  }else{
+    /* PRINTF("CHANGED pointer uip_appdata\n");
+    //Whe should have received an IP - UDP packet --> due to hack setting payload pointer to payload in uip_buf(end of IP & UDP headers)
+    memcpy(uip_appdata, &uip_buf[UIP_LLH_LEN + UIP_IPUDPH_LEN], uip_len - (UIP_LLH_LEN + UIP_IPUDPH_LEN));
+    uint8_t i;
+    char *appdata;
+    appdata = (char *)uip_appdata;
+    PRINTBUF(appdata, 0, uip_len - (UIP_LLH_LEN + UIP_IPUDPH_LEN));
+    uip_appdata -= 4; */
+    printf("buflen: %u\n", packetbuf_datalen());
+    uint8_t i;
+    char *appdata;
+    appdata = (char *)packetbuf_dataptr();
+    PRINTBUF(appdata, 0, packetbuf_datalen());
   }
+  //PRINTF("SLIP PACKET RECV: %x", uip_buf[0]);
   /* Save the last sender received over SLIP to avoid bouncing the
      packet back if no route is found */
   uip_ipaddr_copy(&last_sender, &UIP_IP_BUF->srcipaddr);
@@ -80,11 +100,11 @@ void slipnet_init()
 
 
   /* Here we set a prefix !!! */
-  uip_ip6addr(&prefix,0xbbbb, 0,0,0,0,0,0,1);
+  /* uip_ip6addr(&prefix,0xbbbb, 0,0,0,0,0,0,1);
   PRINTF("Setting prefix ");
   PRINT6ADDR(&prefix);
   PRINTF("\n");
-  set_prefix_64(&prefix);
+  set_prefix_64(&prefix); */
 }
 
 void slipnet_output(void)
@@ -108,6 +128,9 @@ void slipnet_output(void)
     for(i = 0; i<sizeof(fixedHdr) ; i++)
       ptr[i] = fixedHdr[i];
 #endif
+    //Set pointer to tcpip header length in IP UDP packet!! //quite the hacky trick
+    //This is done for slip sending so rpl-border-router will not break
+    uip_appdata = &uip_buf[UIP_IPTCPH_LEN];
     slip_send();
   }
 }
