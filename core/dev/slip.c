@@ -43,6 +43,17 @@
 
 #include "dev/slip.h"
 
+#define DEBUG 0
+#if DEBUG
+#include <stdio.h>
+#define PRINTBUF(buffer, begin, end)  printf("Buffer:{"); for (i = begin; i < end; i++){ \
+                                        printf(" %x", buffer[i]);  \
+                                      } \
+                                      printf("}\n");
+#else
+#define PRINTBUF(buffer, begin, end)
+#endif
+
 #define SLIP_END     0300
 #define SLIP_ESC     0333
 #define SLIP_ESC_END 0334
@@ -107,7 +118,7 @@ slip_send(void)
 
   ptr = &uip_buf[UIP_LLH_LEN];
   for(i = 0; i < uip_len; ++i) {
-    if(i == UIP_IPUDPH_LEN) {
+    if(i == UIP_IPTCPH_LEN) {
       ptr = (uint8_t *)uip_appdata;
     }
     c = *ptr++;
@@ -262,6 +273,12 @@ PROCESS_THREAD(slip_process, ev, data)
     /* Move packet from rxbuf to buffer provided by uIP. */
     uip_len = slip_poll_handler(&uip_buf[UIP_LLH_LEN],
 				UIP_BUFSIZE - UIP_LLH_LEN);
+        uint8_t i;
+  PRINTBUF(uip_buf, UIP_LLH_LEN, uip_len);
+  char *appdata;
+    appdata = (char *)uip_appdata;
+  PRINTBUF(appdata, 0, 12);
+  printf("len: %u\n", uip_len);
 #if !NETSTACK_CONF_WITH_IPV6
     if(uip_len == 4 && strncmp((char*)&uip_buf[UIP_LLH_LEN], "?IPA", 4) == 0) {
       char buf[8];
