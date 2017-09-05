@@ -164,11 +164,12 @@ PROCESS_THREAD(node_cose, ev, data)
      if(ev == sensors_event && data == &button_sensor) {
 
       /* send a request to notify the end of the process */
-
+      uint8_t inftype[1] = {1};
       coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
-      coap_set_header_uri_path(request, service_urls[1]);
+      coap_set_header_uri_path(request, service_urls[2]);
+      coap_set_payload(request, &inftype, sizeof(inftype));
 
-      printf("--Requesting %s--\n", service_urls[1]);
+      printf("--Requesting %s--\n", service_urls[2]);
 
       PRINT6ADDR(&server_ipaddr);
       PRINTF(" : %u\n", UIP_HTONS(REMOTE_PORT));
