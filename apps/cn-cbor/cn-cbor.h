@@ -203,6 +203,9 @@ extern void * custom_calloc_func(size_t count, size_t size, void *context);
 typedef void (*cn_free_func)(void *ptr, void *context);
 extern void custom_free_func(void *ptr, void *context);
 
+//Custom clear memory, delete all the used memory exept for first one
+void clear_memory(void * context);
+
 /**
  * The allocation context.
  */
