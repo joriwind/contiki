@@ -150,7 +150,7 @@ HCOSE COSE_Decode(const byte * rgbData, size_t cbData, int * ptype, COSE_object_
 	CHECK_CONDITION(cbor->type == CN_CBOR_ARRAY, COSE_ERR_INVALID_PARAMETER);
 
 	switch (*ptype) {
-	case COSE_enveloped_object:
+	/* case COSE_enveloped_object:
 		h = (HCOSE)_COSE_Enveloped_Init_From_Object(cbor, NULL, CBOR_CONTEXT_PARAM_COMMA perr);
 		if (h == NULL) {
 			goto errorReturn;
@@ -183,7 +183,7 @@ HCOSE COSE_Decode(const byte * rgbData, size_t cbData, int * ptype, COSE_object_
 		if (h == NULL) {
 			goto errorReturn;
 		}
-		break;
+		break; */
 
 	case COSE_encrypt_object:
 		h = (HCOSE)_COSE_Encrypt_Init_From_Object(cbor, NULL, CBOR_CONTEXT_PARAM_COMMA perr);
