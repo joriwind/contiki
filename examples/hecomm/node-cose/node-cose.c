@@ -73,6 +73,7 @@
 //#define SERVER_NODE(ipaddr)   uip_ip6addr(ipaddr, 0xfd6d, 0xf18e, 0x19a8, 0, 0x6119, 0x12dc, 0x4ff4, 0x6b9a)
 
 #define SERVER_NODE(ipaddr)   uip_ip6addr(ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, 0x1)
+#define FOG_NODE(ipaddr)   uip_ip6addr(ipaddr, 0xaaaa, 0, 0, 0, 0xc30c, 0, 0, 0x5)
 /* #define SERVER_NODE(ipaddr)   uip_ip6addr(ipaddr, 0xbbbb, 0, 0, 0, 0, 0, 0, 0x1) */
 
 #define LOCAL_PORT      UIP_HTONS(COAP_DEFAULT_PORT + 1)
@@ -102,6 +103,7 @@ PROCESS(node_cose, "Erbium Example Client: node Cose");
 AUTOSTART_PROCESSES(&node_cose);
 
 uip_ipaddr_t server_ipaddr;
+uip_ipaddr_t fog_ipaddr;
 
 #if COAP_ENABLED
   /* Example URIs that can be queried. */
@@ -120,6 +122,15 @@ uip_ipaddr_t server_ipaddr;
 
     printf("|%.*s", len, (char *)chunk);
   }
+  void
+  client_secured_handler(void *response)
+  {
+    const uint8_t *chunk;
+
+    int len = coap_get_payload(response, &chunk);
+    
+    printf("Secured payload|%.*s", len, (char *)chunk);
+  }
 #endif
 
 PROCESS_THREAD(node_cose, ev, data)
@@ -130,6 +141,7 @@ PROCESS_THREAD(node_cose, ev, data)
   static coap_packet_t request[1];      /* This way the packet can be treated as pointer as usual. */
 
   SERVER_NODE(&server_ipaddr);
+  FOG_NODE(&fog_ipaddr);
 
   #if COSE_ENABLED
     #ifndef USE_MEMB
@@ -162,22 +174,39 @@ PROCESS_THREAD(node_cose, ev, data)
     PROCESS_WAIT_EVENT();
 #if PLATFORM_HAS_BUTTON
      if(ev == sensors_event && data == &button_sensor) {
+      if(!objsec_key_set()){
+        //Sending a key request to 6lowpan network manager
+        uint8_t inftype[1] = {1};
+        coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
+        coap_set_header_uri_path(request, service_urls[2]);
+        coap_set_payload(request, &inftype, sizeof(inftype));
 
-      /* send a request to notify the end of the process */
-      uint8_t inftype[1] = {1};
-      coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
-      coap_set_header_uri_path(request, service_urls[2]);
-      coap_set_payload(request, &inftype, sizeof(inftype));
+        printf("--Requesting %s--\n", service_urls[2]);
 
-      printf("--Requesting %s--\n", service_urls[2]);
+        PRINT6ADDR(&server_ipaddr);
+        PRINTF(" : %u\n", UIP_HTONS(REMOTE_PORT));
 
-      PRINT6ADDR(&server_ipaddr);
-      PRINTF(" : %u\n", UIP_HTONS(REMOTE_PORT));
+        COAP_BLOCKING_REQUEST(&server_ipaddr, REMOTE_PORT, request,
+                              client_chunk_handler);
 
-      COAP_BLOCKING_REQUEST(&server_ipaddr, REMOTE_PORT, request,
-                            client_chunk_handler);
+        printf("\n--Done--\n");
+      }else{
+        //Key is set thus sending request to fog, to link
+        
+        coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
+        coap_set_header_uri_path(request, service_urls[1]);
 
-      printf("\n--Done--\n");
+        printf("--Requesting %s--\n", service_urls[1]);
+
+        PRINT6ADDR(&server_ipaddr);
+        PRINTF(" : %u\n", UIP_HTONS(REMOTE_PORT));
+
+        COAP_BLOCKING_REQUEST(&fog_ipaddr, REMOTE_PORT, request,
+                              client_secured_handler);
+
+        printf("\n--Done--\n");
+
+      }
 
     }
 #endif
