@@ -22,8 +22,8 @@ size_t encrypt(uint8_t *buffer, uint16_t prefsz, const uint8_t *message, size_t 
  * @param buffer    Buffer to push the plaintext into
  * @param message   Input message, to be decrypted
  * @param len       Length of message
- * @param prefsz    Length of buffer
+ * @return  Length of plaintext, -1 if error occured
  */
-size_t decrypt(uint8_t *buffer, uint16_t prefsz, const uint8_t *message, size_t len);
+size_t decrypt(const uint8_t *message, size_t len, uint8_t **buffer);
 
 #endif

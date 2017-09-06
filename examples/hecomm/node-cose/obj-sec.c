@@ -110,7 +110,7 @@ errorReturn:
   
 }
 
-size_t decrypt(uint8_t *buffer, uint16_t bufferSz, const uint8_t *message, size_t len) {
+size_t decrypt(const uint8_t *message, size_t len, uint8_t **buffer) {
   //HCOSE_ENCRYPT  COSE_Encrypt_Init(COSE_INIT_FLAGS flags, CBOR_CONTEXT_COMMA cose_errback * perr);
   //bool COSE_Encrypt_SetContent(HCOSE_ENCRYPT cose, const byte * rgbContent, size_t cbContent, cose_errback * errp);
   //bool COSE_Encrypt_encrypt(HCOSE_ENCRYPT cose, const byte * pbKey, size_t cbKey, cose_errback * perror);
@@ -118,6 +118,7 @@ size_t decrypt(uint8_t *buffer, uint16_t bufferSz, const uint8_t *message, size_
   HCOSE_ENCRYPT objcose;
 
   int ptype;
+  size_t pltxtSz;
   
   objcose = (HCOSE_ENCRYPT)COSE_Decode(message, len, &ptype, COSE_encrypt_object, &context,&err);
   if (objcose == NULL){
@@ -142,11 +143,11 @@ size_t decrypt(uint8_t *buffer, uint16_t bufferSz, const uint8_t *message, size_
     goto errorReturn;
   }
 
-  message = COSE_Encrypt_GetContent(objcose, &len, &err);
-  if(0 == len){
+  *buffer = COSE_Encrypt_GetContent(objcose, &pltxtSz, &err);
+  if(0 == pltxtSz){
     printf("No message, err: %i\n", err.err);
   }
-  return len;
+  return pltxtSz;
 
 
 errorReturn:
