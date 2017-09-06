@@ -174,7 +174,37 @@ PROCESS_THREAD(node_cose, ev, data)
     PROCESS_WAIT_EVENT();
 #if PLATFORM_HAS_BUTTON
      if(ev == sensors_event && data == &button_sensor) {
-      if(!objsec_key_set()){
+
+      //Debugging encrypt and decrypt
+      size_t preferred_size = 128;
+      uint8_t buffer[preferred_size];
+
+      size_t plaintextLength = 128;
+      uint8_t plaintext[plaintextLength];
+
+      char const *const message = "Hello World! ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxy";
+      size_t messageLength = 12;
+      size_t cipherLength;
+      printf("Encrypting... provided buffer of size: %u\n", preferred_size);
+      cipherLength = encrypt(buffer,preferred_size, (const uint8_t *) message, messageLength);
+      if(cipherLength < 0){
+        printf("Encrypting failed\n");
+        break;
+      }
+      printf("Decrypting...\n");
+      //decrypt function provides output array in plaintext
+      plaintextLength = decrypt(buffer, cipherLength, plaintext, plaintextLength);
+      if(plaintextLength < 0){
+        printf("Decrypting failed\n");
+        break;
+      }
+      printf("Decrypted message: %s\n", plaintext);
+
+
+
+
+
+      /* if(!objsec_key_set()){
         //Sending a key request to 6lowpan network manager
         uint8_t inftype[1] = {1};
         coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
@@ -206,7 +236,7 @@ PROCESS_THREAD(node_cose, ev, data)
 
         printf("\n--Done--\n");
 
-      }
+      } */
 
     }
 #endif
