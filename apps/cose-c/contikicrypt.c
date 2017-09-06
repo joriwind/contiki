@@ -49,6 +49,10 @@ bool AES_CCM_Decrypt(COSE_Enveloped * pcose, int TSize, int LSize, const byte * 
     
     //Decryption
 	CCM_STAR.ctr((uint8_t *)pbCrypto, cbOut, (uint8_t *)pIV);
+
+
+	pcose->pbContent = pbCrypto;
+	pcose->cbContent = cbOut;
 	return true;
 
 errorReturn:
