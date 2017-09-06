@@ -21,18 +21,25 @@
 
 static byte key[OBJ_SEC_KEYSIZE] = INIT_KEY;
 static cn_cbor * algorithm;
+static uint8_t keyset = 0;
 
 void objsec_init(){
     //memcpy(key, INIT_KEY, OBJ_SEC_KEYSIZE);
-    cose_errback err;
+    cn_cbor_errback err;
+    keyset = 0;
     algorithm = cn_cbor_int_create(COSE_Algorithm_AES_CCM_16_64_128,&context, &err);
     if(algorithm == NULL){
       PRINTF("Could not allocate algorithm object: %u\n", err.err);
     }
 }
 
+uint8_t objsec_key_set(){
+  return keyset;
+}
+
 void objsec_set_key(uint8_t *k){
     memcpy(key, k, OBJ_SEC_KEYSIZE);
+    keyset = 1;
 }
 
 size_t encrypt(uint8_t *buffer, uint16_t bufferSz, const uint8_t *message, size_t len) {
@@ -91,6 +98,56 @@ size_t encrypt(uint8_t *buffer, uint16_t bufferSz, const uint8_t *message, size_
   clear_memory(&context);
   printf("Objcose released!\n");
   return size;
+
+errorReturn:
+  if (objcose != NULL) {
+    printf("Releasing objcose\n");
+    COSE_Encrypt_Free(objcose);
+    clear_memory(&context);
+    printf("Objcose released!\n");
+  }
+  return -1;
+  
+}
+
+size_t decrypt(uint8_t *buffer, uint16_t bufferSz, const uint8_t *message, size_t len) {
+  //HCOSE_ENCRYPT  COSE_Encrypt_Init(COSE_INIT_FLAGS flags, CBOR_CONTEXT_COMMA cose_errback * perr);
+  //bool COSE_Encrypt_SetContent(HCOSE_ENCRYPT cose, const byte * rgbContent, size_t cbContent, cose_errback * errp);
+  //bool COSE_Encrypt_encrypt(HCOSE_ENCRYPT cose, const byte * pbKey, size_t cbKey, cose_errback * perror);
+  cose_errback err;
+  HCOSE_ENCRYPT objcose;
+
+  int ptype;
+  
+  objcose = (HCOSE_ENCRYPT)COSE_Decode(message, len, &ptype, COSE_encrypt_object, &context,&err);
+  if (objcose == NULL){
+    printf("Unable to decode cose object: %i\n", err.err);
+    return - 1;
+  }
+
+  cn_cbor * alg = COSE_Encrypt_map_get_int(objcose, COSE_Header_Algorithm, COSE_BOTH, &err);
+  if (alg == NULL){
+    printf("Unable to get used algorithm: %i\n", err.err);
+    goto errorReturn;
+  }
+
+  if ((alg->type != CN_CBOR_INT) && (alg->type != CN_CBOR_UINT)) return true;
+	if (alg->v.sint != COSE_Algorithm_AES_CCM_16_64_128){
+    printf("Algorithm not supported: %i\n", (int)alg->v.sint);
+    goto errorReturn;
+  }
+  
+  if(!COSE_Encrypt_decrypt(objcose, key, OBJ_SEC_KEYSIZE, &err)){
+    printf("Unable to decrypt COSE object: %i\n", err.err);
+    goto errorReturn;
+  }
+
+  message = COSE_Encrypt_GetContent(objcose, &len, &err);
+  if(0 == len){
+    printf("No message, err: %i\n", err.err);
+  }
+  return len;
+
 
 errorReturn:
   if (objcose != NULL) {
