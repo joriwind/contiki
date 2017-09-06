@@ -5,7 +5,7 @@
 #include "rest-engine.h"
 #include "obj-sec.h"
 
-#define DEBUG 0
+#define DEBUG 1
 #if DEBUG
 #include <stdio.h>
 #define PRINTF(...) printf(__VA_ARGS__)
@@ -34,10 +34,10 @@ res_post_handler(void *request, void *response, uint8_t *buffer, uint16_t prefer
     const char *key = NULL;
     int success = 0;
     PRINTF("Key post\n");
-    if((len = REST.get_request_payload(request, &key))) {
+    if((len = REST.get_request_payload(request, (const uint8_t **)&key))) {
         PRINTF("OSSKey: %.*s, length: %i\n", len, key, len);
 
-        objsec_set_key(key);
+        objsec_set_key((uint8_t *)key);
         if (success > 0){   //Means error from ospad
             PRINTF("Error setting new key!: %i\n", success);
             success = 0;
