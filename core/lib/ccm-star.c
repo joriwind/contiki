@@ -49,7 +49,7 @@
 #include <stdio.h>
 #define PRINTF(...) printf(__VA_ARGS__)
 #define PRINTLARGEHEX(array, len, i) for(i = 0;i < len; i++){ \
-  PRINTF("%x", array[i]);\
+  PRINTF("%x ", array[i]);\
 }
 #else /* DEBUG */
 #define PRINTF(...)
@@ -139,7 +139,7 @@ mic(const uint8_t *m,  uint8_t m_len,
   }
   
   if(m_len > 0) {
-    //m = a + a_len;
+    //m = a + a_len;  //Dirty hack deleted, it does not effect on hw accelarator use
     pos = 0;
     while(pos < m_len) {
       for(i = 0; (pos + i < m_len) && (i < AES_128_BLOCK_SIZE); i++) {
@@ -165,7 +165,7 @@ ctr(uint8_t *m, uint8_t m_len, const uint8_t* nonce)
   uint8_t pos;
   uint8_t counter;
 
-  PRINTF("CCM ctr: message: ");
+  PRINTF("CCM ctr: before: ");
   uint8_t v;
   PRINTLARGEHEX(m, m_len,v);
   PRINTF(", len: %u, nonce: ", m_len);
@@ -177,6 +177,11 @@ ctr(uint8_t *m, uint8_t m_len, const uint8_t* nonce)
     ctr_step(nonce, pos, m, m_len, counter++);
     pos += AES_128_BLOCK_SIZE;
   }
+  PRINTF("CCM ctr: after: ");
+  PRINTLARGEHEX(m, m_len,v);
+  PRINTF(", len: %u, nonce: ", m_len);
+  PRINTLARGEHEX(nonce, 4,v);
+  PRINTF("\n");
 }
 /*---------------------------------------------------------------------------*/
 static void set_key(const uint8_t *key) {
