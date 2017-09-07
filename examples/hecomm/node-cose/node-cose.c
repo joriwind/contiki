@@ -53,6 +53,8 @@
 #endif
 #include "dev/button-sensor.h"
 
+#include "cc2420.h"
+#include "ccm-star.h"
 
 #define DEBUG 1
 #if DEBUG
@@ -65,6 +67,12 @@
 #define PRINT6ADDR(addr)
 #define PRINTLLADDR(addr)
 #endif
+
+uint16_t i;
+#define PRINTBUF(buffer, begin, end)  printf("Buffer:{"); for (i = begin; i < end; i++){ \
+	printf(" %x", buffer[i]);  \
+  } \
+  printf("}\n");
 
 /* FIXME: This server address is hard-coded for Cooja and link-local for unconnected border router. */
 //#define SERVER_NODE(ipaddr)   uip_ip6addr(ipaddr, 0xfe80, 0, 0, 0, 0x0212, 0x7402, 0x0002, 0x0202)      /* cooja2 */
@@ -174,17 +182,78 @@ PROCESS_THREAD(node_cose, ev, data)
     PROCESS_WAIT_EVENT();
 #if PLATFORM_HAS_BUTTON
      if(ev == sensors_event && data == &button_sensor) {
+      /* printf("\n");
+      //Testing aes driver and cmm star
+      printf("START OF TEST\n");
+      uint8_t key[16] = {0};
+      uint8_t start[16] = { 0x0, 0x1, 0x2, 0x3, 
+                            0x4, 0x5, 0x6, 0x7, 
+                            0x8, 0x9, 0xA, 0xB,
+                            0xC, 0xD, 0xE, 0xF};
+      uint8_t iv[16] = {0};
+      uint8_t buffer[16];
+      uint8_t tag[16];
+      memcpy(buffer, start, 16);
+      set_key1(key);
+      en_key(1);
 
-      //Debugging encrypt and decrypt
+      printf("Buffer before aes encrypt: ");
+      PRINTBUF(buffer, 0, 16);
+      printf("Using key: %x\n", read_SECCTRL0());
+      cc2420_aes_128_driver.encrypt(buffer);
+      printf("Buffer after aes encrypt: ");
+      PRINTBUF(buffer, 0, 16);
+      memcpy(buffer, start, 16);
+
+      printf("Buffer before mic encrypt: ");
+      PRINTBUF(buffer, 0, 16);
+      printf("Using key: %x\n", read_SECCTRL0());
+	    CCM_STAR.mic(buffer, 16, iv, 0,  0, tag, 16);
+      memcpy(buffer, tag, 16);
+      memcpy(tag, iv, 16);
+
+      printf("Buffer after mic encrypt: ");
+      PRINTBUF(buffer, 0, 16);
+
+      en_key(0);
+
+      memcpy(buffer, start, 16);
+
+      printf("Buffer before aes encrypt: ");
+      PRINTBUF(buffer, 0, 16);
+      printf("Using key: %x\n", read_SECCTRL0());
+      cc2420_aes_128_driver.encrypt(buffer);
+      printf("Buffer after aes encrypt: ");
+      PRINTBUF(buffer, 0, 16);
+      memcpy(buffer, start, 16);
+
+      printf("Buffer before encrypt: ");
+      PRINTBUF(buffer, 0, 16);
+
+      printf("Using key: %x\n", read_SECCTRL0());
+	    CCM_STAR.mic(buffer, 16, iv, 0,  0, tag, 16);
+      memcpy(buffer, tag, 16);
+      memcpy(tag, iv, 16);
+
+      printf("Buffer after encrypt: ");
+      PRINTBUF(buffer, 0, 16); */
+
+
+
+
+      //Debugging  COSE encrypt and decrypt
+      /* printf("\n");
+      printf("Testing cose encrypt decrypt\n");
       size_t preferred_size = 128;
       uint8_t buffer[preferred_size];
 
       size_t plaintextLength = 128;
       uint8_t plaintext[plaintextLength];
 
-      char const *const message = "Hello World! ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxy";
+      char const *const message = "Hello World!";
       size_t messageLength = 12;
       size_t cipherLength;
+      printf("Sending: %s, length: %u\n", message, messageLength);
       printf("Encrypting... provided buffer of size: %u\n", preferred_size);
       cipherLength = encrypt(buffer,preferred_size, (const uint8_t *) message, messageLength);
       if(cipherLength < 0){
@@ -198,13 +267,13 @@ PROCESS_THREAD(node_cose, ev, data)
         printf("Decrypting failed\n");
         break;
       }
-      printf("Decrypted message: %s\n", plaintext);
+      printf("Decrypted message: %s, length: %u\n", plaintext, plaintextLength); */
 
 
 
 
 
-      /* if(!objsec_key_set()){
+      if(!objsec_key_set()){
         //Sending a key request to 6lowpan network manager
         uint8_t inftype[1] = {1};
         coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
@@ -236,7 +305,7 @@ PROCESS_THREAD(node_cose, ev, data)
 
         printf("\n--Done--\n");
 
-      } */
+      }
 
     }
 #endif
