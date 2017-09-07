@@ -19,7 +19,7 @@ extern "C" {
 #include "cbor.h"
 
 
-#define DEBUG 1
+#define DEBUG 0
 #if DEBUG
 #include <stdio.h>
 #define PRINTF(...) printf(__VA_ARGS__)
@@ -73,7 +73,7 @@ void * custom_calloc_func(size_t count, size_t size, void *context){
   for(i = 0; i < POOL_SIZE; i++){
     if (!active[i]){
       if(!mmem_alloc(&mmem_pool[i], size * count)){
-        printf("mmem_alloc error, i:%u size:%u\n", i, size * count);
+        PRINTF("mmem_alloc error, i:%u size:%u\n", i, size * count);
         return NULL;
       }
       active[i] = true;
@@ -81,12 +81,12 @@ void * custom_calloc_func(size_t count, size_t size, void *context){
       //Setting the memory to 0, emulate calloc functionality
       //Not checking existance of ptr, mmem_alloc worked
       memset(ptr, 0, size * count);
-      printf("Calloced %u, ptr: %p, size: %u\n", i, ptr, size*count);
+      PRINTF("Calloced %u, ptr: %p, size: %u\n", i, ptr, size*count);
       return ptr;
     }
     
   }
-  printf("No more elements available to allocate\n");
+  PRINTF("No more elements available to allocate\n");
   return NULL;  //Non available
 
    
@@ -124,7 +124,7 @@ void clear_memory(void * context){
     if(active[i]){
       mmem_free(&mmem_pool[i]);
       active[i] = false;
-      printf("Released %u\n", i);
+      PRINTF("Released %u\n", i);
     }
   }
 }

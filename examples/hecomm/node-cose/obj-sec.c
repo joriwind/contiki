@@ -65,33 +65,28 @@ size_t encrypt(uint8_t *buffer, uint16_t bufferSz, const uint8_t *message, size_
     PRINTF("Error in init cose: %i\n", err.err);
     return -1;
   }
-  printf("Init done!\n");
 
   if( !COSE_Encrypt_SetContent(objcose, message, len, &err)){
     PRINTF("Error in set content cose: %i\n",err.err);
     goto errorReturn;
   }
-  printf("Setcontent done!\n");
 
   //if(!COSE_Encrypt_map_put_int(objcose, COSE_Header_Algorithm, algorithm, COSE_DONT_SEND, &err)){
   if(!COSE_Encrypt_map_put_int(objcose, COSE_Header_Algorithm, algorithm, COSE_UNPROTECT_ONLY, &err)){
     PRINTF("Error in setting algorithm %i\n", err.err);
     goto errorReturn;
   }
-  PRINTF("Algorithm set!\n");
 
   //Setting AAD
   if(!COSE_Encrypt_SetExternal(objcose, temp, temp_len, &err)){
     PRINTF("Error in setting AAD %i\n", err.err);
     goto errorReturn;
   }
-  PRINTF("AAD set\n");
 
   if( !COSE_Encrypt_encrypt(objcose, key, OBJ_SEC_KEYSIZE, &err)){
     PRINTF("Error in encrypt cose: %i\n", err.err);
     goto errorReturn;
   }
-  printf("Encrypt done!\n");
 
 
   size_t size = COSE_Encode((HCOSE) objcose, buffer, 0, bufferSz);
