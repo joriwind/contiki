@@ -107,20 +107,15 @@ mic(const uint8_t *m,  uint8_t m_len,
   uint8_t i;
 
 
+  PRINTF("\n");
   PRINTF("CCM mic: m: ");
   uint8_t v = 0;
   PRINTLARGEHEX(m, m_len,v);
   PRINTF(", len: %u, nonce: ", m_len);
-  PRINTLARGEHEX(nonce, 4,v);
+  PRINTLARGEHEX(nonce, CCM_STAR_NONCE_LENGTH,v);
   PRINTF(", a: ");
   PRINTLARGEHEX(a, a_len,v);
-  PRINTF(", len: %u, mic_len: %u\n", a_len, mic_len);
-  PRINTF("\n");
-  PRINTF("Key: ");
-  uint8_t key[16];
-  get_key(key);
-  PRINTLARGEHEX(key, 16, v);
-  PRINTF("\n");
+  PRINTF(", len: %u, mic_len: %u, keyreg: %x\n", a_len, mic_len, read_SECCTRL0());
 
   set_nonce(x, CCM_STAR_AUTH_FLAGS(a_len, mic_len), nonce, m_len);
   AES_128.encrypt(x);
@@ -144,7 +139,7 @@ mic(const uint8_t *m,  uint8_t m_len,
   }
   
   if(m_len > 0) {
-    m = a + a_len;
+    //m = a + a_len;
     pos = 0;
     while(pos < m_len) {
       for(i = 0; (pos + i < m_len) && (i < AES_128_BLOCK_SIZE); i++) {
