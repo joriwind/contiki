@@ -499,11 +499,17 @@ init_security(void)
 void en_key(uint8_t i)
 {
   if (i == 0){
+    GET_LOCK();
     setreg(CC2420_SECCTRL0, CC2420_SECCTRL0_SAKEYSEL0);
+    RELEASE_LOCK();
   }else{
+    GET_LOCK();
     setreg(CC2420_SECCTRL0, CC2420_SECCTRL0_SAKEYSEL1);
+    RELEASE_LOCK();
   }
 }
+
+
 /*---------------------------------------------------------------------------*/
 static void
 set_key(uint8_t *key)
@@ -530,6 +536,16 @@ void get_key(uint8_t *key)  //This function does not seem to work?
   read_ram(key, CC2420RAM_KEY0, 16);
   
   RELEASE_LOCK();
+}
+
+uint16_t read_SECCTRL0(){
+  uint16_t reg;
+  GET_LOCK();
+  
+  reg =  getreg(CC2420_SECCTRL0);
+  
+  RELEASE_LOCK();
+  return reg;
 }
 /*---------------------------------------------------------------------------*/
 static void
