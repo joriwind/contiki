@@ -15,40 +15,58 @@
 static const unsigned short seed = 25647;
 
 
+uint16_t i;
+#define PRINTBUF(buffer, begin, end)  printf("Buffer:{"); for (i = begin; i < end; i++){ \
+	printf(" %x", buffer[i]);  \
+  } \
+  printf("}\n");
+
+
 
 bool AES_CCM_Decrypt(COSE_Enveloped * pcose, int TSize, int LSize, const byte * pbKey, size_t cbKey, const byte * pbCrypto, size_t cbCrypto, const byte * pbAuthData, size_t cbAuthData, cose_errback * perr)
 {
-    LSize = 15 - (LSize / 8); //Conversion?
-    TSize /= 8; // Comes in in bits not bytes.
-    uint8_t check_tag[16];
+	uint16_t NSize = 15 - (LSize / 8); //Conversion?
+	TSize /= 8; // Comes in in bits not bytes.
+    uint8_t check_tag[15] = {0};
 	const cn_cbor * pIV = NULL;
-    int cbOut;
-    int diff;
+    uint16_t cbOut;
     int i;
     //  Setup the IV/Nonce and put it into the message
 	pIV = _COSE_map_get_int(&pcose->m_message, COSE_Header_IV, COSE_BOTH, NULL);
 	if ((pIV == NULL) || (pIV->type!= CN_CBOR_BYTES)) {
 		if (perr != NULL) perr->err = COSE_ERR_INVALID_PARAMETER;
         return false;
-    }
+	}
+	printf("IV: ");
+	PRINTBUF((uint8_t *)pIV->v.str, 0, pIV->length);
 
-    CHECK_CONDITION(pIV->length == LSize, COSE_ERR_INVALID_PARAMETER);
+    CHECK_CONDITION(pIV->length == NSize, COSE_ERR_INVALID_PARAMETER);
 	//memcpy(rgbIV, pIV->v.str, pIV->length);
 
-    CHECK_CONDITION(cbKey*8 == 128, COSE_ERR_CRYPTO_FAIL)
-    CCM_STAR.set_key(pbKey);
+    CHECK_CONDITION(cbKey == 128/8, COSE_ERR_CRYPTO_FAIL);
+    set_key1((uint8_t *)pbKey);
+	en_key(1);
     
-    cbOut = (int)  cbCrypto - TSize;
-    //mic check
-    CCM_STAR.mic((uint8_t *)pbCrypto,  cbCrypto, (uint8_t *)pIV, pbAuthData,  cbAuthData, check_tag, TSize);
-    
-    /* Check tag in "constant-time" */
-    for( diff = 0, i = 0; i < TSize; i++ )
-        diff |= pbCrypto[i + cbOut] ^ check_tag[i];
-    CHECK_CONDITION(diff != 0, COSE_ERR_CRYPTO_FAIL);
-    
+    cbOut = (uint16_t)  cbCrypto - TSize;
     //Decryption
-	CCM_STAR.ctr((uint8_t *)pbCrypto, cbOut, (uint8_t *)pIV);
+	CCM_STAR.ctr((uint8_t *)pbCrypto, cbCrypto, (uint8_t *)pIV->v.str);
+	
+    CCM_STAR.mic((uint8_t *)pbCrypto, cbOut, (uint8_t *)pIV->v.str, pbAuthData,  cbAuthData, check_tag, TSize);
+	
+
+    if(memcmp(check_tag, &pbCrypto[cbOut], TSize) != 0){
+		printf("Tag mismatch\n");
+		printf("ChckT: ");
+		PRINTBUF(check_tag, 0, TSize);
+		printf("Tag: ");
+		PRINTBUF(pbCrypto, cbOut, cbOut + TSize);
+		perr->err = COSE_ERR_CRYPTO_FAIL;
+		goto errorReturn;
+	}
+
+
+	printf("Restore LLSEC key\n");
+	en_key(0);
 
 
 	pcose->pbContent = pbCrypto;
@@ -56,13 +74,15 @@ bool AES_CCM_Decrypt(COSE_Enveloped * pcose, int TSize, int LSize, const byte * 
 	return true;
 
 errorReturn:
+	printf("Restore LLSEC key\n");
+	en_key(0);
     return false;
 }
 
 
 bool AES_CCM_Encrypt(COSE_Enveloped * pcose, int TSize, int LSize, const byte * pbKey, size_t cbKey, const byte * pbAuthData, size_t cbAuthData, cose_errback * perr)
 {
-	int cbOut;
+	uint16_t cbOut;
 	uint8_t NSize = 15 - (LSize/8);
 	const cn_cbor * cbor_iv = NULL;
     uint8_t iv[16];
@@ -71,14 +91,14 @@ bool AES_CCM_Encrypt(COSE_Enveloped * pcose, int TSize, int LSize, const byte * 
 	cn_cbor * cnNonce = NULL;
     
     cbOut = pcose->cbContent;
-    uint8_t ciphertxt[cbOut + TSize];
+	uint8_t ciphertxt[cbOut + TSize];
+	memset(ciphertxt, 0, cbOut + TSize);
 
 	byte * nonce = NULL;
 
     cn_cbor_errback cn_err;
 
 #ifdef USE_CBOR_CONTEXT
-#warning AES_ENCYRPT CONTEXT ENABLED!!
 	cn_cbor_context * context = &pcose->m_message.m_allocContext;
 #endif
 
@@ -88,16 +108,19 @@ bool AES_CCM_Encrypt(COSE_Enveloped * pcose, int TSize, int LSize, const byte * 
 		printf("IV is zero\n");
 		nonce = COSE_CALLOC(NSize, 1, context);
 		CHECK_CONDITION(nonce != NULL, COSE_ERR_OUT_OF_MEMORY);
-        CHECK_CONDITION(LSize == 16, COSE_ERR_CRYPTO_FAIL);
-		printf("LSize correct\n");
+		CHECK_CONDITION(LSize == 16, COSE_ERR_CRYPTO_FAIL);
+		
 		CHECK_CONDITION(iv != NULL, COSE_ERR_OUT_OF_MEMORY);
-		printf("iv is not zero\n");
+		printf("Nonce size: %i\n", NSize);
 		rand_bytes(nonce, NSize);
+		printf("Nonce: ");
+		PRINTBUF(nonce, 0, NSize);
 		memcpy(iv, nonce, NSize);
 
-		cnNonce = cn_cbor_data_create(nonce, NSize, CBOR_CONTEXT_PARAM_COMMA &cn_err);
+		cnNonce = cn_cbor_data_create(iv, NSize, CBOR_CONTEXT_PARAM_COMMA &cn_err);
 		CHECK_CONDITION_CBOR(cnNonce != NULL, cn_err);
-		printf("cnNonce is not zero\n");
+		printf("IV: ");
+		PRINTBUF(cnNonce->v.str, 0, cnNonce->length);
 
 		if (!_COSE_map_put(&pcose->m_message, COSE_Header_IV, cnNonce, COSE_UNPROTECT_ONLY, perr)) goto errorReturn;
 		cnNonce = NULL;
@@ -113,35 +136,32 @@ bool AES_CCM_Encrypt(COSE_Enveloped * pcose, int TSize, int LSize, const byte * 
 
 	//Set the key to use
     CHECK_CONDITION(cbKey == 128/8, COSE_ERR_CRYPTO_FAIL);
-    set_key1(pbKey);
+    set_key1((uint8_t *)pbKey);
 	en_key(1);
-	printf("Key set\n");
+	
+    memcpy(ciphertxt, pcose->pbContent, cbOut);
+	CCM_STAR.mic(ciphertxt, cbOut, iv, pbAuthData, cbAuthData, &ciphertxt[cbOut], TSize);
+	
+	CCM_STAR.ctr(ciphertxt, cbOut + TSize, iv);
+	
 
-    //Copy over message to result buffer
-    memcpy(ciphertxt, pcose->pbContent, pcose->cbContent);
-    CCM_STAR.ctr(ciphertxt, pcose->cbContent, iv);
-    CCM_STAR.mic(pcose->pbContent, pcose->cbContent, iv, pbAuthData, cbAuthData, &ciphertxt[cbOut], TSize);
-
-	printf("mic calculated\n");
-
-	cnTmp = cn_cbor_data_create(ciphertxt, (int)pcose->cbContent + TSize, CBOR_CONTEXT_PARAM_COMMA NULL);
+	printf("Tag calculated\n");
+	printf("Tag size: %i\n", TSize);
+	cnTmp = cn_cbor_data_create(ciphertxt, cbOut + TSize, CBOR_CONTEXT_PARAM_COMMA NULL);
 	CHECK_CONDITION(cnTmp != NULL, COSE_ERR_CBOR);
 
 	CHECK_CONDITION(_COSE_array_replace(&pcose->m_message, cnTmp, INDEX_BODY, CBOR_CONTEXT_PARAM_COMMA NULL), COSE_ERR_CBOR);
 	cnTmp = NULL;
 
-	#if (LLSEC802154_CONF_ENABLED == 1)
-	//Restore the key of LLSEC!
+	
 	printf("Restore LLSEC key\n");
 	en_key(0);
-	/* uint8_t key[16] = NONCORESEC_CONF_KEY;
-	//uint8_t key[16] = {0,0,0,0 , 0,0,0,0 , 0,0,0,0 , 0,0,0,0};
-	CCM_STAR.set_key(key); */
-	#endif
-
+	
 	return true;
 
 errorReturn:
+	printf("Restore LLSEC key\n");
+	en_key(0);
 	return false;
 }
 
