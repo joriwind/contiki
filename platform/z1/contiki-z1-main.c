@@ -133,6 +133,9 @@ force_inclusion(int d1, int d2)
 }
 #endif
 /*---------------------------------------------------------------------------*/
+void emptyfunction(){
+  return;
+}
 static void
 set_rime_addr(void)
 {
@@ -320,6 +323,7 @@ main(int argc, char **argv)
 
   NETSTACK_RDC.init();
   NETSTACK_MAC.init();
+  NETSTACK_LLSEC.bootstrap(emptyfunction);
   NETSTACK_NETWORK.init();
 
   printf("%s %s %s %s, channel check rate %lu Hz, radio channel %u\n",
