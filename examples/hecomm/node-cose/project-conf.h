@@ -95,6 +95,11 @@
 #undef COAP_PROXY_OPTION_PROCESSING
 #define COAP_PROXY_OPTION_PROCESSING   0
 
+#undef COAP_RESPONSE_TIMEOUT
+#define COAP_RESPONSE_TIMEOUT                10
+#undef COAP_MAX_RETRANSMIT
+#define COAP_MAX_RETRANSMIT                  0
+
 /* Enable client-side support for COAP observe */
 //#define COAP_OBSERVE_CLIENT 1
 
