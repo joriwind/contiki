@@ -36,7 +36,7 @@ res_post_handler(void *request, void *response, uint8_t *buffer, uint16_t prefer
     PRINTF("Key post\n");
     if((len = REST.get_request_payload(request, (const uint8_t **)&key))) {
         PRINTF("OSSKey: %.*s, length: %i\n", len, key, len);
-
+#if COSE_ENABLED
         objsec_set_key((uint8_t *)key);
         if (success > 0){   //Means error from ospad
             PRINTF("Error setting new key!: %i\n", success);
@@ -46,6 +46,7 @@ res_post_handler(void *request, void *response, uint8_t *buffer, uint16_t prefer
         {
             success = 1;
         }
+#endif
     }
     if(!success) {
         REST.set_response_status(response, REST.status.BAD_REQUEST);
