@@ -72,7 +72,7 @@ size_t encrypt(uint8_t *buffer, uint16_t bufferSz, const uint8_t *message, size_
   }
 
   //if(!COSE_Encrypt_map_put_int(objcose, COSE_Header_Algorithm, algorithm, COSE_DONT_SEND, &err)){
-  if(!COSE_Encrypt_map_put_int(objcose, COSE_Header_Algorithm, algorithm, COSE_UNPROTECT_ONLY, &err)){
+  if(!COSE_Encrypt_map_put_int(objcose, COSE_Header_Algorithm, algorithm, COSE_PROTECT_ONLY, &err)){
     PRINTF("Error in setting algorithm %i\n", err.err);
     goto errorReturn;
   }
@@ -125,7 +125,11 @@ size_t decrypt(const uint8_t *message, size_t len, uint8_t *buffer, size_t buffe
   cn_cbor * alg = COSE_Encrypt_map_get_int(objcose, COSE_Header_Algorithm, COSE_BOTH, &err);
   if (alg == NULL){
     printf("Unable to get used algorithm: %i\n", err.err);
-    goto errorReturn;
+    if(!COSE_Encrypt_map_put_int(objcose, COSE_Header_Algorithm, algorithm, COSE_PROTECT_ONLY, &err)){
+      PRINTF("Error in setting algorithm %i\n", err.err);
+      goto errorReturn;
+    }
+    //goto errorReturn;
   }
 
   if ((alg->type != CN_CBOR_INT) && (alg->type != CN_CBOR_UINT)) return true;
@@ -133,11 +137,13 @@ size_t decrypt(const uint8_t *message, size_t len, uint8_t *buffer, size_t buffe
     printf("Algorithm not supported: %i\n", (int)alg->v.sint);
     goto errorReturn;
   }
+  PRINTF("Algortihm supported\n");
   
   if(!COSE_Encrypt_decrypt(objcose, key, OBJ_SEC_KEYSIZE, &err)){
     printf("Unable to decrypt COSE object: %i\n", err.err);
     goto errorReturn;
   }
+  PRINTF("COSE decrypted\n");
 
   COSE_Encrypt * pcose = (COSE_Encrypt *)objcose;
   if(pcose->cbContent > bufferSz){
