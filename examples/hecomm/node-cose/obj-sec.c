@@ -151,12 +151,13 @@ size_t decrypt(const uint8_t *message, size_t len, uint8_t *buffer, size_t buffe
     return -1;
   }
   memcpy(buffer, pcose->pbContent, pcose->cbContent);
-  
+  //Relocate size so cose object can be freed
+  size_t size = pcose->cbContent;
   printf("Buffer filled\n");
   COSE_Encrypt_Free(objcose);
   clear_memory(&context);
   printf("Objcose released!\n");
-  return pcose->cbContent;
+  return size;
 
 errorReturn:
   if (objcose != NULL) {
