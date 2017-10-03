@@ -49,7 +49,7 @@ bool AES_CCM_Decrypt(COSE_Enveloped * pcose, int TSize, int LSize, const byte * 
     
     cbOut = (uint16_t)  cbCrypto - TSize;
     //Decryption
-	CCM_STAR.ctr((uint8_t *)pbCrypto, cbCrypto, (uint8_t *)pIV->v.str);
+	CCM_STAR.ctr((uint8_t *)pbCrypto, cbOut, (uint8_t *)pIV->v.str);
 	
     CCM_STAR.mic((uint8_t *)pbCrypto, cbOut, (uint8_t *)pIV->v.str, pbAuthData,  cbAuthData, check_tag, TSize);
 	
@@ -142,7 +142,7 @@ bool AES_CCM_Encrypt(COSE_Enveloped * pcose, int TSize, int LSize, const byte * 
     memcpy(ciphertxt, pcose->pbContent, cbOut);
 	CCM_STAR.mic(ciphertxt, cbOut, iv, pbAuthData, cbAuthData, &ciphertxt[cbOut], TSize);
 	
-	CCM_STAR.ctr(ciphertxt, cbOut + TSize, iv);
+	CCM_STAR.ctr(ciphertxt, cbOut, iv);
 	
 
 	printf("Tag calculated\n");
