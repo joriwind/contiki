@@ -128,16 +128,25 @@ uip_ipaddr_t fog_ipaddr;
 
     int len = coap_get_payload(response, &chunk);
 
-    printf("|%.*s", len, (char *)chunk);
+    printf("Regular handler|%.*s\r\n", len, (char *)chunk);
   }
   void
   client_secured_handler(void *response)
   {
     const uint8_t *chunk;
 
+    size_t plaintextLength = 128;
+    uint8_t plaintext[plaintextLength];
+
     int len = coap_get_payload(response, &chunk);
+    plaintextLength = decrypt(chunk, len, plaintext, plaintextLength);
+    if(plaintextLength < 0){
+      printf("Decrypting failed\n");
+      return;
+    }
+    printf("Decrypted message: %s, length: %u\n", plaintext, plaintextLength);
     
-    printf("Secured payload|%.*s", len, (char *)chunk);
+    printf("Secured payload|%.*s\r\n", len, (char *)chunk);
   }
 #endif
 
@@ -272,13 +281,14 @@ PROCESS_THREAD(node_cose, ev, data)
 
 
 
-
+  #if HECOMM_ENABLED
+    #if COSE_ENABLED
       if(!objsec_key_set()){
         //Sending a key request to 6lowpan network manager
         uint8_t inftype[1] = {1};
         coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
         coap_set_header_uri_path(request, service_urls[2]);
-        coap_set_payload(request, &inftype, sizeof(inftype));
+        coap_set_payload(request, inftype, sizeof(inftype));
 
         printf("--Requesting %s--\n", service_urls[2]);
 
@@ -290,22 +300,27 @@ PROCESS_THREAD(node_cose, ev, data)
 
         printf("\n--Done--\n");
       }else{
+    #endif
         //Key is set thus sending request to fog, to link
-        
+        char const *const message = "Test payload!";
+        int length = 13;
         coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
         coap_set_header_uri_path(request, service_urls[1]);
+        coap_set_payload(request, message, length);
 
         printf("--Requesting %s--\n", service_urls[1]);
 
-        PRINT6ADDR(&server_ipaddr);
+        PRINT6ADDR(&fog_ipaddr);
         PRINTF(" : %u\n", UIP_HTONS(REMOTE_PORT));
 
         COAP_BLOCKING_REQUEST(&fog_ipaddr, REMOTE_PORT, request,
                               client_secured_handler);
 
         printf("\n--Done--\n");
-
+    #if COSE_ENABLED
       }
+    #endif
+  #endif
 
     }
 #endif
