@@ -138,6 +138,9 @@ uip_ipaddr_t fog_ipaddr;
     size_t plaintextLength = 128;
     uint8_t plaintext[plaintextLength];
 
+    //To compare results
+    const char* expected = "Hello world!";
+
     int len = coap_get_payload(response, &chunk);
     plaintextLength = decrypt(chunk, len, plaintext, plaintextLength);
     if(plaintextLength < 0){
@@ -145,14 +148,36 @@ uip_ipaddr_t fog_ipaddr;
       return;
     }
     printf("Decrypted message: %s, length: %u\n", plaintext, plaintextLength);
+
+    //Check if message correct
+    if(sizeof(expected) == plaintextLength){
+      printf("Message length does not match\r\n");
+    }
+    for(i;i<sizeof(plaintext);i++){
+      if(plaintext[i] != expected[i]){
+        printf("Message content does not match on %i\r\n", i);
+        return;
+      }
+    }
+    //Assume correct message, toggle led
+    printf("Toggle phidget connector");
+    //uint8_t status = relay_toggle();
+    char status;
+    status = (~P1OUT) & 0x01;
+    P1OUT = status;
+    printf("Secured payload|%.*s, status: %i\r\n", len, (char *)chunk, status);
     
-    printf("Secured payload|%.*s\r\n", len, (char *)chunk);
   }
 #endif
 
 PROCESS_THREAD(node_cose, ev, data)
 {
   PROCESS_BEGIN();
+
+  //For demonstration purpose
+  //relay_enable()
+  /* Config pin P1.0 voor output */
+  P1DIR = 0x01;
 
 #if COAP_ENABLED
   static coap_packet_t request[1];      /* This way the packet can be treated as pointer as usual. */
@@ -177,7 +202,7 @@ PROCESS_THREAD(node_cose, ev, data)
   rest_activate_resource(&res_os_hello, "test/os-hello");
   rest_activate_resource(&res_os_key, "hecomm/osskey");
   #endif
-  rest_activate_resource(&res_compartner, "hecomm/commpartner");
+  //rest_activate_resource(&res_compartner, "hecomm/commpartner");
 
   /* receives all CoAP messages */
   coap_init_engine();
