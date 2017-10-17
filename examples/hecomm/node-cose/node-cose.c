@@ -41,6 +41,7 @@
 #include <string.h>
 #include "contiki.h"
 #include "contiki-net.h"
+#include "dev/leds.h"
 #if COAP_ENABLED
   #include "rest-engine.h"
   #include "er-coap-engine.h"
@@ -153,19 +154,20 @@ uip_ipaddr_t fog_ipaddr;
     if(sizeof(expected) == plaintextLength){
       printf("Message length does not match\r\n");
     }
-    for(i;i<sizeof(plaintext);i++){
+    for(i;i<sizeof(expected);i++){
       if(plaintext[i] != expected[i]){
         printf("Message content does not match on %i\r\n", i);
         return;
       }
     }
     //Assume correct message, toggle led
-    printf("Toggle phidget connector");
+    printf("Toggle phidget connector\r\n");
     //uint8_t status = relay_toggle();
-    char status;
+    leds_on(LEDS_ALL);
+    /* char status;
     status = (~P1OUT) & 0x01;
-    P1OUT = status;
-    printf("Secured payload|%.*s, status: %i\r\n", len, (char *)chunk, status);
+    P1OUT = status; */
+    printf("Secured payload|%.*s\r\n", len, (char *)chunk);
     
   }
 #endif
@@ -174,10 +176,11 @@ PROCESS_THREAD(node_cose, ev, data)
 {
   PROCESS_BEGIN();
 
+  leds_off(LEDS_ALL);
   //For demonstration purpose
-  //relay_enable()
+  //relay_enable();
   /* Config pin P1.0 voor output */
-  P1DIR = 0x01;
+  //P1DIR = 0x01;
 
 #if COAP_ENABLED
   static coap_packet_t request[1];      /* This way the packet can be treated as pointer as usual. */
@@ -326,6 +329,7 @@ PROCESS_THREAD(node_cose, ev, data)
         printf("\n--Done--\n");
       }else{
     #endif
+        leds_off(LEDS_ALL);
         //Key is set thus sending request to fog, to link
         char const *const message = "Test payload!";
         int length = 13;
@@ -342,6 +346,8 @@ PROCESS_THREAD(node_cose, ev, data)
                               client_secured_handler);
 
         printf("\n--Done--\n");
+
+        leds_blink();
     #if COSE_ENABLED
       }
     #endif
